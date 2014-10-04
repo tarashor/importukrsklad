@@ -1,0 +1,29 @@
+
+#nav li a:hover {
+	color: #5b9e5b;
+	}
+
+#head h2, #head .sitetag {
+	color: #5b9e5b;
+	}
+
+#right li a:hover, .right2 li a:hover, .sidehead a:hover {
+	color: #5b9e5b;
+	}
+
+h2, .date {
+	color: #5b9e5b;
+	}
+
+#content a, #content2 a, #foot a, .blogit-listmore a {
+	color: #5b9e5b;
+	border-bottom: 1px dotted #5b9e5b;
+	}
+
+img.content, a img.content {
+	background-color: #5b9e5b;
+	}
+
+thead th {
+  color: #5b9e5b;
+}

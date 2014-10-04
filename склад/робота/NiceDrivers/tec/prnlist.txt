@@ -1,0 +1,8 @@
+Windows Drivers for Dobler(Windows XP, Server 2003, Vista, Server 2008, Windows 7, XP 64-bit, Server 2003 64-bit, Vista 64-bit, Server 2008 64-bit, Windows 7 64-bit)
+
+Version: 4.6.62 (Build 3142)
+Date: 04/06/2011
+
+Supported printers:
+ TTP-200E
+ TTP-300E
