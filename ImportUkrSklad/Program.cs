@@ -26,6 +26,22 @@ namespace ImportUkrSklad
 
             System.Threading.Thread.Sleep(2000);*/
 
+        //string sql = "select * from TOVAR_NAME"; 
+        /*FbDataReader reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine("{0}\t{1}", reader.GetInt32(0),
+                            reader.GetString(1));
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+                reader.Close();*/
+
         static void Main(string[] args)
         {
             
@@ -42,24 +58,12 @@ namespace ImportUkrSklad
             {
                 connection.Open();
 
-                string sql = "select * from TOVAR_NAME"; 
-
-                FbCommand command = new FbCommand(sql, connection);
-
-                FbDataReader reader = command.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        Console.WriteLine("{0}\t{1}", reader.GetInt32(0),
-                            reader.GetString(1));
-                    }
+                for (int i = 4; i < 100; i++) {
+                    string sql = createNakladnaSQL(i);
+                    FbCommand command = new FbCommand(sql, connection);
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Generated {0}", i);
                 }
-                else
-                {
-                    Console.WriteLine("No rows found.");
-                }
-                reader.Close();
             }
             catch (Exception ex)
             {
@@ -68,7 +72,20 @@ namespace ImportUkrSklad
             finally
             {
                 connection.Close();
+                Console.ReadLine();
             }
+
+            
         }
+
+
+        private const string insertVNAKL = @"INSERT INTO VNAKL (NUM, FIRMA_ID, NU, DATE_DOK, CLIENT, CENA, CENA_PDV, CENA_ZNIG, DOV_SER, DOV_NUM, DOV_DATA, DOV_FIO, CLIENT_ID, PDV, PROD_UMOV, ZNIG_TYPE, POD_REKL_PER, POD_REKL_CH, FIO_BUH, NU_ID, SKLAD_ID, CURR_TYPE, CURR_CENA, CURR_CENA_PDV, CURR_CENA_ZNIG, CURR_PDV, CURR_POD_REKL_CH, CLIENT_RAH_ID, AFIRM_RAH_ID, DOPOLN, CENA_TOV_TRANS, CURR_CENA_TOV_TRANS, IS_MOVE, DOC_MARK_TYPE, DOC_USER_ID, DOC_CREATE_TIME, DOC_MODIFY_TIME, DOC_DESCR, ARTICLE_ID, TTN_NU, TTN_DATE_DOK, TTN_DOR_LIST, TTN_AVTO, TTN_AVTO_PIDPR, TTN_VODITEL, TTN_ADR_FROM, TTN_ADR_TO, IM_NUM, ZNIG_PROC, TTN_AVTO_PRIC, TTN_VID_PEREV, TTN_KOLVO_MIS, TTN_MAS_BRUT, PDV_TYPE)
+           VALUES ({0}, 1, '1', '2014-10-08 00:00:00', 'ПП Федоркова', 0, 0, 0, '', '', NULL, '', 3, 0, '', 0, NULL, 0, NULL, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 0, 1, 0, 1, '2014-10-08 17:54:35', '2014-10-14 19:17:59', '', 0, '', '1899-12-30 00:00:00', '', '', '', '', '', '', -1, 0, '', '', '', '', 0);";
+
+        private static string createNakladnaSQL(int nakladnaID) {
+            return string.Format(insertVNAKL, nakladnaID);
+        }
+
+        
     }
 }
