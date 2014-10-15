@@ -57,7 +57,7 @@ namespace ImportUkrSklad
             {
                 connection.Open();
 
-                createBills(connection);
+                createBill(connection);
             }
             catch (Exception ex)
             {
@@ -72,26 +72,81 @@ namespace ImportUkrSklad
 
         }
 
-        private static void createBills(FbConnection connection)
+        private static void createBill(FbConnection connection)
         {
-            for (int i = 4; i < 100; i++)
-            {
-                string sql = createNakladnaSQL(i);
-                FbCommand command = new FbCommand(sql, connection);
-                command.ExecuteNonQuery();
-                Console.WriteLine("Generated {0}", i);
-            }
+            createBillHeader(connection);
+            int billID = getLastBillID(connection);
+
+            string billSQL = createBillContentSQL();
+            FbCommand command = new FbCommand(billSQL, connection);
+            command.ExecuteNonQuery();
         }
 
+        private static void createBillHeader(FbConnection connection)
+        {
+            int billNumber = 2;
+            int clientID = 2;
+            int skladID = 1;
+            int userID = 1;
 
-        private const string dateFormat = "yyyy-mm-dd hh:mm:ss";
+            string clientName = getClientNameByID(clientID);
+            string billSQL = createBillSQL(1, billNumber, DateTime.Now, clientName, 0, 0, clientID, 0, billNumber, skladID, 0, 0, 0, userID, DateTime.Now, DateTime.Now);
+            FbCommand command = new FbCommand(billSQL, connection);
+            command.ExecuteNonQuery();
+        }
+
+        
+
+
+        private const string dateFormat = "yyyy-MM-dd hh:mm:ss";
 
         private const string insertVNAKL = @"INSERT INTO VNAKL (NUM,    FIRMA_ID,   NU,     DATE_DOK,    CLIENT,             CENA,       CENA_PDV,       CENA_ZNIG,      DOV_SER,        DOV_NUM,        DOV_DATA,       DOV_FIO,        CLIENT_ID,      PDV,        PROD_UMOV,      ZNIG_TYPE,      POD_REKL_PER,       POD_REKL_CH,   FIO_BUH,    NU_ID,      SKLAD_ID,   CURR_TYPE,      CURR_CENA,      CURR_CENA_PDV,      CURR_CENA_ZNIG,     CURR_PDV,       CURR_POD_REKL_CH,   CLIENT_RAH_ID,  AFIRM_RAH_ID,       DOPOLN,         CENA_TOV_TRANS, CURR_CENA_TOV_TRANS,    IS_MOVE,    DOC_MARK_TYPE,      DOC_USER_ID,        DOC_CREATE_TIME,    DOC_MODIFY_TIME,    DOC_DESCR,      ARTICLE_ID, TTN_NU, TTN_DATE_DOK, TTN_DOR_LIST, TTN_AVTO, TTN_AVTO_PIDPR, TTN_VODITEL, TTN_ADR_FROM, TTN_ADR_TO, IM_NUM, ZNIG_PROC, TTN_AVTO_PRIC, TTN_VID_PEREV, TTN_KOLVO_MIS, TTN_MAS_BRUT, PDV_TYPE)
                                                         VALUES (NULL,   {0},        '{1}',  '{2}',       '{3}',              {4},        {5},            0,              '',             '',             NULL,           '',             {6},            {7},        '',             0,              NULL,               0,             NULL,       {8},        {9},        0,              {10},           {11},               0,                  {12},           0,                  0,              0,                  '',             0, 0,                                   1,          0,                  {13},               '{14}',             '{15}',             '',             0, '', '1899-12-30 00:00:00', '', '', '', '', '', '', -1, 0, '', '', '', '', 0);";
 
-        private static string createNakladnaSQL(int firmaID, int billNumber, DateTime billDate, string client, decimal price, decimal totalPrice, int clientID, decimal pdv, int nuID, int skladID, decimal currentPrice, decimal currentTotalPrice, decimal currentPdv, int userID, DateTime billCreated, DateTime billModified)
+        private const string insertVNAKL_ = @"INSERT INTO VNAKL_ (NUM,  PID,    TOV_NAME,   TOV_KOLVO,  TOV_CENA,   TOV_ED,     TOV_CENA_PDV,   TOV_KOLVO_PART, TOVAR_ID,       CURR_TOV_CENA,      CURR_TOV_CENA_PDV,      SKLAD_ID,       TOV_SUMA,   CURR_TOV_SUMA, DOC_DOPOLN, IS_PDV, COMPL_ID, IS_COMPL, COMPL_KOLVO_DEF, COMPL_IS_CONST, TOV_SUMA_ZNIG, CURR_TOV_SUMA_ZNIG)
+                                                          VALUES (NULL, {0},    '{1}',      {2},        {3},        '{4}',      {5},            1,              {6},            {7},                {8},                    {9},            {10},       {11}, '', -1, 0, 0, 0, 0, 0, 0);";
+
+        private static string createBillSQL(int firmaID, int billNumber, DateTime billDate, string client, decimal price, decimal totalPrice, int clientID, decimal pdv, int nuID, int skladID, decimal currentPrice, decimal currentTotalPrice, decimal currentPdv, int userID, DateTime billCreated, DateTime billModified)
         {
-            return string.Format(insertVNAKL, firmaID, billNumber, billDate, client, price, totalPrice, clientID, pdv, nuID, skladID, currentPrice, currentTotalPrice, currentPdv, userID, billCreated, billModified);
+            return string.Format(insertVNAKL, firmaID, billNumber, billDate.ToString(dateFormat), client, price, totalPrice, clientID, pdv, nuID, skladID, currentPrice, currentTotalPrice, currentPdv, userID, billCreated.ToString(dateFormat), billModified.ToString(dateFormat));
+        }
+
+        private static string createBillContentSQL(int billID, string tovarName, double count, decimal price, string odVymiru, decimal totalPrice, int tovarID, decimal currentPrice, decimal currentTotalPrice, int skladID, decimal sumPrice, decimal currentSumPrice)
+        {
+            return string.Format(insertVNAKL_, billID, tovarName, count, price, odVymiru, totalPrice, tovarID, currentPrice, currentTotalPrice, skladID, sumPrice, currentSumPrice);
+        }
+
+        private static int getLastBillID(FbConnection connection)
+        {
+            int lastBillID = -1;
+            string sql = "select * from VNAKL ORDER BY NUM DESC";
+            FbCommand command = new FbCommand(sql, connection);
+            FbDataReader reader = command.ExecuteReader();
+            try
+            {
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        lastBillID = reader.GetInt32(0);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                reader.Close();
+            }
+
+            return lastBillID;
+        }
+
+        private static string getClientNameByID(int clientID)
+        {
+            throw new NotImplementedException();
         }
 
 
