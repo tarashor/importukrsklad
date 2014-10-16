@@ -1,8 +1,10 @@
 ﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ImportUkrSklad
@@ -13,6 +15,14 @@ namespace ImportUkrSklad
 
         static void Main(string[] args)
         {
+            //Get current culture 
+            string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            CultureInfo ci = new CultureInfo(sCurrentCulture);
+            ci.NumberFormat.NumberDecimalSeparator = ".";
+            System.Threading.Thread.CurrentThread.CurrentCulture = ci;
+
+            
+
             FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
             cs.Database = @"c:\ProgramData\UkrSklad\db\Sklad.tcb";
             cs.UserID = "SYSDBA";
@@ -26,10 +36,10 @@ namespace ImportUkrSklad
             {
                 connection.Open();
                 List<Tovar> tovars = new List<Tovar>();
-                tovars.Add(new Tovar(){Count=11.2, TovarKOD = 2});
-                tovars.Add(new Tovar(){Count=5, TovarKOD = 2});
-                tovars.Add(new Tovar(){Count=1, TovarKOD = 3});
-                createBill(connection, 10, 2, PriceType.CinaOptova, 1, tovars);
+                tovars.Add(new Tovar() { Count = 11.2, TovarKOD = "111" });
+                tovars.Add(new Tovar() { Count = 5, TovarKOD = "111" });
+                tovars.Add(new Tovar() { Count = 1, TovarKOD = "111" });
+                createBill(connection, 10, 3, PriceType.CinaOptova, 1, tovars);
 
                 //createBill(connection);
             }
@@ -63,9 +73,9 @@ namespace ImportUkrSklad
             command.ExecuteNonQuery();
         }
 
-        private static decimal addTovarToBill(FbConnection connection, int billID, int tovarID, double count, PriceType priceType, int skladID)
+        private static decimal addTovarToBill(FbConnection connection, int billID, string tovarID, double count, PriceType priceType, int skladID)
         {
-            UkrSkladTovar tovar = getTovarByKOD(tovarID);
+            UkrSkladTovar tovar = getTovarByKOD(connection, tovarID);
             decimal price = getPrice(tovar, priceType);
             decimal pricePDV = getPriceWithPDV(price);
             decimal sum = (decimal)count * price;
@@ -81,7 +91,7 @@ namespace ImportUkrSklad
             int skladID = 1;
             int userID = 1;
 
-            string clientName = getClientNameByID(clientID);
+            string clientName = getClientNameByID(connection, clientID);
             string billSQL = createBillSQL(1, billNumber, DateTime.Now, clientName, 0, 0, clientID, 0, billNumber, skladID, 0, 0, 0, userID, DateTime.Now, DateTime.Now);
             FbCommand command = new FbCommand(billSQL, connection);
             command.ExecuteNonQuery();
@@ -123,7 +133,7 @@ namespace ImportUkrSklad
             {
                 if (reader.HasRows)
                 {
-                    while (reader.Read())
+                    if (reader.Read())
                     {
                         lastBillID = reader.GetInt32(0);
                     }
@@ -151,11 +161,12 @@ namespace ImportUkrSklad
             {
                 if (reader.HasRows)
                 {
-                    while (reader.Read())
+                    if (reader.Read())
                     {
                         for (int i = 0; i < reader.FieldCount; i++) {
                             if (reader.GetName(i) == "FIO") {
                                 clientName = reader.GetString(i);
+                                break;
                             }
                         }
                     }
@@ -176,7 +187,7 @@ namespace ImportUkrSklad
         private static UkrSkladTovar getTovarByKOD(FbConnection connection, string tovarKOD)
         {
             UkrSkladTovar tovar = null;
-            string sql = "select * from TOVAR_NAME where KOD=" + tovarKOD;
+            string sql = string.Format("select * from TOVAR_NAME where KOD='{0}'", tovarKOD);
             FbCommand command = new FbCommand(sql, connection);
             FbDataReader reader = command.ExecuteReader();
             try
@@ -188,9 +199,43 @@ namespace ImportUkrSklad
                         tovar = new UkrSkladTovar();
                         for (int i = 0; i < reader.FieldCount; i++)
                         {
-                            if (reader.GetName(i) == "FIO")
+                            string column = reader.GetName(i);
+                            if (column == "NUM")
                             {
-                                tovar.ID = reader.GetString(i);
+                                tovar.ID = reader.GetInt32(i);
+                            }
+                            if (column == "NAME")
+                            {
+                                tovar.Name = reader.GetString(i);
+                            }
+                            if (column == "ED_IZM")
+                            {
+                                tovar.MeasurementUnits = reader.GetString(i);
+                            }
+                            if (column == "CENA")
+                            {
+                                tovar.Cina = reader.GetDecimal(i);
+                            }
+                            if (column == "CENA_O")
+                            {
+                                tovar.CinaOptova = reader.GetDecimal(i);
+                            }
+                            if (column == "CENA_R")
+                            {
+                                tovar.CinaRozdrib = reader.GetDecimal(i);
+                            }
+
+                            if (column == "CENA_1")
+                            {
+                                tovar.Cina1 = reader.GetDecimal(i);
+                            }
+                            if (column == "CENA_2")
+                            {
+                                tovar.Cina2 = reader.GetDecimal(i);
+                            }
+                            if (column == "CENA_3")
+                            {
+                                tovar.Cina3 = reader.GetDecimal(i);
                             }
                         }
                     }

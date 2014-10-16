@@ -8,7 +8,7 @@ namespace ImportUkrSklad
 {
     public class Tovar
     {
-        public int TovarKOD { get; set; }
+        public string TovarKOD { get; set; }
         public double Count { get; set; }
     }
 }
