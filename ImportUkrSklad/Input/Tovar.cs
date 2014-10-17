@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImportUkrSklad
+namespace ImportUkrSklad.Input
 {
     public class Tovar
     {

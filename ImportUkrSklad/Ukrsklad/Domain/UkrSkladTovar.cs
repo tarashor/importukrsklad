@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ImportUkrSklad
+namespace ImportUkrSklad.Ukrsklad.Domain
 {
     public class UkrSkladTovar
     {
