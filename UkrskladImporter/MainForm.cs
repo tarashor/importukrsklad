@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -12,24 +13,41 @@ using Ukrsklad.Domain.Model;
 
 namespace UkrskladImporter
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        private const string dbLocation = @"c:\ProgramData\UkrSklad\db\Sklad.tcb";
         private Bill bill;
         private UkrskladDB db;
         private IList<Client> clients;
         private IList<Client> activeFirms;
         private IList<Sklad> sklads;
         private IList<Price> prices;
+        private BillReader billReader;
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
-            db = new UkrskladDB(dbLocation);
-            clients = db.GetClients();
-            activeFirms = db.GetClients();
-            sklads = db.GetSklads();
-            prices = getPrices();
+            try
+            {
+                string dbLocation = ConfigurationManager.AppSettings["DBLocation"];
+                db = new UkrskladDB(dbLocation);
+                clients = db.GetClients();
+                activeFirms = db.GetClients();
+                sklads = db.GetSklads();
+                prices = getPrices();
+            }
+            catch (Exception e) {
+                MessageBox.Show("Відсутнє підключення до бази даних укрскладу. Перевірте шлях до бази даних в конфігураційному файлі.");
+            }
+
+            int defaultActiveFirm  = 1;
+            try {
+                defaultActiveFirm = int.Parse(ConfigurationManager.AppSettings["defaultActiveFirmID"]);
+            }
+            catch (Exception e) {
+                MessageBox.Show("Неправильно задана активна фірма у конфігураційному файлі.");
+            }
+
+            billReader = new BillReader(clients, activeFirms, defaultActiveFirm);
         }
 
         private IList<Price> getPrices()
@@ -50,15 +68,16 @@ namespace UkrskladImporter
         {
             DialogResult dialogResult = openFileDialog.ShowDialog();
             if (dialogResult == System.Windows.Forms.DialogResult.OK) {
-                loadBill(BillReader.ReadFromFile(openFileDialog.FileName, clients, activeFirms));
+                Bill b = billReader.ReadFromFile(openFileDialog.FileName);
+                loadBill(b);
             }
         }
 
         private void loadBill(Bill bill) {
             this.bill = bill;
-            foreach (Tovar tovar in bill.Tovars) {
+            /*foreach (Tovar tovar in bill.Tovars) {
                 tovar.Name = db.GetTovarName(tovar.KOD);
-            }
+            }*/
             tovars.DataSource = bill.Tovars;
             activeFirmComboBox.SelectedItem = bill.FromClient;
             clientsComboBox.SelectedItem = bill.ToClient;
@@ -119,7 +138,10 @@ namespace UkrskladImporter
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            db.Close();
+            if (db != null)
+            {
+                db.Close();
+            }
         }
 
         private void clientsComboBox_SelectedValueChanged(object sender, EventArgs e)
@@ -139,11 +161,5 @@ namespace UkrskladImporter
             if (bill != null)
                 bill.FromClient = (Client)activeFirmComboBox.SelectedValue;
         }
-
-
-
-        
-
-        
     }
 }

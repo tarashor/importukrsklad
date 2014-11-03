@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ExportScanner.Domain.Model;
+using ExportScanner.Domain.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,24 +12,40 @@ namespace UkrskladImporter
 {
     public class BillReader
     {
-        public static Bill ReadFromFile(string filename, IList<Client> clients, IList<Client> activeFirm)
+        private IList<Client> clients;
+        private IList<Client> activeFirms;
+        private int defaultFromClientID;
+
+        public BillReader(IList<Client> clients, IList<Client> activeFirms, int defaultFromClientID) 
+        { 
+            this.clients = clients;
+            this.activeFirms = activeFirms;
+            this.defaultFromClientID = defaultFromClientID;
+        }
+
+        public Bill ReadFromFile(string filename)
+        {
+            BillScanner billFromScanner =  BillScannerSerializator.Load(filename);
+            return convertBill(billFromScanner);
+        }
+
+        private Bill convertBill(BillScanner billfromScanner)
         {
             Bill bill = new Bill();
+            int clientID = mapScannerClientIdToUkrskladId(billfromScanner.ClientID);
+            foreach(int scannerTovarId in billfromScanner.Tovars.Keys)
+            {
+                bill.Tovars.Add(createTovar(scannerTovarId, billfromScanner.Tovars[scannerTovarId]));
+            }
 
-            //int firmID = 1;
-            int clientID = -20;
-
-            bill.Tovars.Add(createTovar("111", 11.2));
-            bill.Tovars.Add(createTovar("111", 5));
-            bill.Tovars.Add(createTovar("111", 1));
-
-            //bill.FromClient = getClient(activeFirm, firmID);
-            bill.ToClient = getClient(clients, clientID);
-            
+            bill.FromClient = getClient(defaultFromClientID);
+            bill.ToClient = getClient(clientID);
             return bill;
         }
 
-        private static Client getClient(IList<Client> clients, int clientID)
+        
+
+        private Client getClient(int clientID)
         {
             foreach (Client client in clients) { 
                 if (client.ID == clientID)
@@ -36,11 +54,31 @@ namespace UkrskladImporter
             return null;
         }
 
-        private static Tovar createTovar(string kod, double count) { 
+        private Client getActiveFirm(int activeFirmID)
+        {
+            foreach (Client client in activeFirms)
+            {
+                if (client.ID == activeFirmID)
+                    return client;
+            }
+            return null;
+        }
+
+        private Tovar createTovar(int scannerId, double count) { 
             Tovar tovar = new Tovar();
-            tovar.Count = count; 
-            tovar.KOD = kod;
+            tovar.Count = count;
+            tovar.KOD = mapScannerIdToKod(scannerId);
             return tovar;
+        }
+
+        private string mapScannerIdToKod(int scannerId)
+        {
+            return scannerId.ToString();
+        }
+
+        private int mapScannerClientIdToUkrskladId(int scannerClientID)
+        {
+            return -20;
         }
     }
 }

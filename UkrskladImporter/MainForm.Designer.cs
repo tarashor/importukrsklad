@@ -1,6 +1,6 @@
 ﻿namespace UkrskladImporter
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -36,7 +36,6 @@
             this.skladsComboBox = new System.Windows.Forms.ComboBox();
             this.pricesComboBox = new System.Windows.Forms.ComboBox();
             this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
             this.tovars = new System.Windows.Forms.DataGridView();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.activeFirmComboBox = new System.Windows.Forms.ComboBox();
@@ -46,6 +45,7 @@
             // 
             // button1
             // 
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button1.Location = new System.Drawing.Point(552, 386);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
@@ -56,6 +56,8 @@
             // 
             // label1
             // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(13, 46);
             this.label1.Name = "label1";
@@ -65,6 +67,8 @@
             // 
             // label2
             // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(13, 76);
             this.label2.Name = "label2";
@@ -74,6 +78,8 @@
             // 
             // label3
             // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(12, 107);
             this.label3.Name = "label3";
@@ -83,6 +89,8 @@
             // 
             // clientsComboBox
             // 
+            this.clientsComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.clientsComboBox.FormattingEnabled = true;
             this.clientsComboBox.Location = new System.Drawing.Point(101, 43);
             this.clientsComboBox.Name = "clientsComboBox";
@@ -92,6 +100,8 @@
             // 
             // skladsComboBox
             // 
+            this.skladsComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.skladsComboBox.FormattingEnabled = true;
             this.skladsComboBox.Location = new System.Drawing.Point(101, 73);
             this.skladsComboBox.Name = "skladsComboBox";
@@ -101,6 +111,8 @@
             // 
             // pricesComboBox
             // 
+            this.pricesComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.pricesComboBox.FormattingEnabled = true;
             this.pricesComboBox.Location = new System.Drawing.Point(101, 104);
             this.pricesComboBox.Name = "pricesComboBox";
@@ -109,6 +121,7 @@
             // 
             // button2
             // 
+            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button2.Location = new System.Drawing.Point(471, 386);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 23);
@@ -117,17 +130,11 @@
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(13, 386);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(75, 23);
-            this.button3.TabIndex = 8;
-            this.button3.Text = "Відміна";
-            this.button3.UseVisualStyleBackColor = true;
-            // 
             // tovars
             // 
+            this.tovars.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tovars.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.tovars.Location = new System.Drawing.Point(13, 131);
             this.tovars.Name = "tovars";
@@ -136,10 +143,13 @@
             // 
             // openFileDialog
             // 
-            this.openFileDialog.FileName = "openFileDialog1";
+            this.openFileDialog.DefaultExt = "vnakl";
+            this.openFileDialog.Filter = "Вихідна накладна (.vnakl)|*.vnakl";
             // 
             // activeFirmComboBox
             // 
+            this.activeFirmComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.activeFirmComboBox.FormattingEnabled = true;
             this.activeFirmComboBox.Location = new System.Drawing.Point(101, 12);
             this.activeFirmComboBox.Name = "activeFirmComboBox";
@@ -149,6 +159,8 @@
             // 
             // label4
             // 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(13, 15);
             this.label4.Name = "label4";
@@ -164,7 +176,6 @@
             this.Controls.Add(this.activeFirmComboBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.tovars);
-            this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.pricesComboBox);
             this.Controls.Add(this.skladsComboBox);
@@ -174,7 +185,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "Зберігання в УКРСКЛАД";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.tovars)).EndInit();
@@ -193,7 +204,6 @@
         private System.Windows.Forms.ComboBox skladsComboBox;
         private System.Windows.Forms.ComboBox pricesComboBox;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
         private System.Windows.Forms.DataGridView tovars;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.ComboBox activeFirmComboBox;

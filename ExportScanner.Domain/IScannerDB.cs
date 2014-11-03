@@ -12,5 +12,6 @@ namespace ExportScanner.Domain
         BillScanner GetBillForClient(int clientID);
         IEnumerable<int> GetDistinctClientsInBill();
         string GetNameForClient(int clientID);
+        void Close();
     }
 }
