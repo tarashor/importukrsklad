@@ -14,13 +14,17 @@ namespace UkrskladImporter
     {
         private IList<Client> clients;
         private IList<Client> activeFirms;
+        private IDictionary<int, int> clientMapScannerToUkrsklad;
+        private IDictionary<int, string> goodsMapScannerToUkrsklad;
         private int defaultFromClientID;
 
-        public BillReader(IList<Client> clients, IList<Client> activeFirms, int defaultFromClientID) 
+        public BillReader(IList<Client> clients, IList<Client> activeFirms, int defaultFromClientID, IDictionary<int, string> goodsMapScannerToUkrsklad, IDictionary<int, int> clientMapScannerToUkrsklad) 
         { 
             this.clients = clients;
             this.activeFirms = activeFirms;
             this.defaultFromClientID = defaultFromClientID;
+            this.clientMapScannerToUkrsklad = clientMapScannerToUkrsklad;
+            this.goodsMapScannerToUkrsklad = goodsMapScannerToUkrsklad;
         }
 
         public Bill ReadFromFile(string filename)
@@ -74,11 +78,24 @@ namespace UkrskladImporter
         private string mapScannerIdToKod(int scannerId)
         {
             return scannerId.ToString();
+            /*string ukrskladID;
+            if (goodsMapScannerToUkrsklad.TryGetValue(scannerId, out ukrskladID)) 
+            {
+                return ukrskladID;
+            }
+            throw new ArgumentException("Немає відповідності у файлі для товару з кодом:" + scannerId.ToString());*/
+            
         }
 
         private int mapScannerClientIdToUkrskladId(int scannerClientID)
         {
             return -20;
+            /*int ukrskladID;
+            if (clientMapScannerToUkrsklad.TryGetValue(scannerClientID, out ukrskladID))
+            {
+                return ukrskladID;
+            }
+            throw new ArgumentException("Немає відповідності у файлі для клієнта з кодом:" + scannerClientID.ToString());*/
         }
     }
 }

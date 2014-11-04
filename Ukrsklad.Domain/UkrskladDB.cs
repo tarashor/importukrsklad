@@ -14,7 +14,7 @@ namespace Ukrsklad.Domain
     {
         private FbConnection connection;
 
-        public UkrskladDB(string databaseLocation) {
+        public UkrskladDB(string databaseLocation, bool isLocal) {
             string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
             CultureInfo ci = new CultureInfo(sCurrentCulture);
             ci.NumberFormat.NumberDecimalSeparator = ".";
@@ -26,7 +26,15 @@ namespace Ukrsklad.Domain
             cs.Password = "masterkey";
             cs.Charset = "NONE";
             cs.Pooling = false;
-            cs.ServerType = FbServerType.Embedded;
+            if (isLocal)
+            {
+                cs.ServerType = FbServerType.Embedded;
+            }
+            else
+            {
+                cs.DataSource = "localhost";
+                cs.Port = 3050;
+            }
 
             connection = new FbConnection(cs.ToString());
             connection.Open();
@@ -42,14 +50,21 @@ namespace Ukrsklad.Domain
         private const string insertTOVAR_MOVE = @"INSERT INTO TOVAR_MOVE (NUM,      DOC_TYPE_ID,    DOC_ID,     MDATE,      TOVAR_ID,   FROM_FIRMA_ID,      FROM_SKLAD_ID,      FROM_KOLVO,     FROM_CENA,      FROM_SUMA,      TO_FIRMA_ID,        TO_SKLAD_ID,        TO_KOLVO,       TO_CENA,        TO_SUMA,        CURR_TYPE,      CURR_FROM_CENA,         CURR_FROM_SUMA,         CURR_TO_CENA,   CURR_TO_SUMA,   FROM_FIRMA_RAH_ID, TO_FIRMA_RAH_ID, CENA_ZNIG_DIFF, SUMA_ZNIG_DIFF, CURR_CENA_ZNIG_DIFF, CURR_SUMA_ZNIG_DIFF,       CENA_PDV, SUMA_PDV, CURR_CENA_PDV, CURR_SUMA_PDV,       ARTICLE_ID, COMPL_ID, IS_USLUGA)
                                                                   VALUES (NULL,     1,              {0},        '{1}',      {2},        {3},                {4},                {5},            {6},            {7},            {8},                {9},                {10},           {11},           {12},           0,              {13},                   {14},                   {15},           {16},           0, 0, 0, 0, 0, 0,                                                                                                   {17}, {18}, {19}, {20},                                 0, 0, 0);";
 
+        private const string insertTOVAR_ZAL = @"INSERT INTO TOVAR_ZAL (NUM,    FIRMA_ID,   TOVAR_ID,       SKLAD_ID,       KOLVO,      SUMA,       CENA_IN,    CENA_R,     CENA_O,     CENA_1,     CENA_2,       LAST_POST_ID)
+                                                                VALUES (NULL,   {0},        {1},            {2},            {3},        0,          {4},        {5},        {6},        {7},        {8},          -1);";
+
+        private const string updateTOVAR_ZAL = @"UPDATE TOVAR_ZAL SET KOLVO = {0} WHERE (NUM = {1});";
+
         private const string updateBillPrice = @"UPDATE VNAKL SET CENA = {0}, CENA_PDV = {1}, PDV = {2}, CURR_CENA = {3}, CURR_CENA_PDV = {4}, CURR_PDV = {5} WHERE (NUM = {6});";
 
-        private const string dateFormat = "yyyy-MM-dd hh:mm:ss";
+        private const string dateTimeFormat = "yyyy-MM-dd hh:mm:ss";
+
+        private const string dateFormat = "yyyy-MM-dd 00:00:00";
 
 
-        public void createBill(Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars)
+        public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars)
         {
-            createBillHeader(getBiggestBillNumber() + 1, sklad.ID, fromClient.ID, toClient.ID);
+            createBillHeader(getBiggestBillNumber() + 1, sklad.ID, fromClient.ID, toClient.ID, userID);
             int billID = getLastBillID();
             decimal total = 0;
             foreach (InputTovar InputTovar in tovars)
@@ -80,8 +95,38 @@ namespace Ukrsklad.Domain
 
             createTovarMove(billID, InputTovar.ID, fromClientID, skladID, count, price, toClientID);
             //update
+            updateTovarLeft(InputTovar.ID, skladID, fromClientID, count, InputTovar.Cina, InputTovar.CinaRozdrib, InputTovar.CinaOptova, InputTovar.Cina1, InputTovar.Cina2);
 
             return sum;
+        }
+
+        private void updateTovarLeft(int tovarID, int skladID, int fromClientID, double count, decimal cina, decimal cinar, decimal cinao, decimal cina1, decimal cina2)
+        {
+            double leftCount;
+            int? leftID = getLeftCountOfTovar(tovarID, skladID, fromClientID, out leftCount);
+            if (leftID.HasValue)
+            {
+                leftCount = leftCount - count;
+                updateLeftCountTovar(leftID.Value, leftCount);
+            }
+            else 
+            {
+                insertLeftCountTovar(tovarID, skladID, fromClientID, leftCount, cina, cinar, cinao, cina1, cina2);
+            }
+        }
+
+        private void updateLeftCountTovar(int leftID, double leftCount)
+        {
+            string updateLeftSQL = string.Format(updateTOVAR_ZAL, leftCount, leftID);
+            FbCommand command = new FbCommand(updateLeftSQL, connection);
+            command.ExecuteNonQuery();
+        }
+
+        private void insertLeftCountTovar(int tovarID, int skladID, int fromClientID, double leftCount, decimal cina, decimal cinar, decimal cinao, decimal cina1, decimal cina2)
+        {
+            string insertLeftSQL = string.Format(insertTOVAR_ZAL, fromClientID, tovarID, skladID, leftCount, cina, cinar, cinao, cina1, cina2);
+            FbCommand command = new FbCommand(insertLeftSQL, connection);
+            command.ExecuteNonQuery();
         }
 
         private void createTovarMove(int billID, int tovarID, int fromFirmaID, int fromSkladID, double count, decimal price, int toFirmaID)
@@ -95,14 +140,42 @@ namespace Ukrsklad.Domain
             command.ExecuteNonQuery();
         }
 
-        private void createBillHeader(int billNumber, int skladID, int fromClientID, int toClientID)
+        private void createBillHeader(int billNumber, int skladID, int fromClientID, int toClientID, int userID)
         {
-            int userID = 1;
-
             string clientName = getClientNameByID(toClientID);
             string billSQL = createBillSQL(fromClientID, billNumber, DateTime.Today, clientName, 0, 0, toClientID, 0, billNumber, skladID, 0, 0, 0, userID, DateTime.Now, DateTime.Now);
             FbCommand command = new FbCommand(billSQL, connection);
             command.ExecuteNonQuery();
+        }
+
+        private int? getLeftCountOfTovar(int tovarID, int skladID, int clientID, out double leftCount)
+        {
+            leftCount = 0;
+            int? leftID = null;
+            string sql = string.Format("select * from TOVAR_ZAL where FIRMA_ID={0} and TOVAR_ID={1} and SKLAD_ID={2}",clientID, tovarID, skladID);
+            FbCommand command = new FbCommand(sql, connection);
+            FbDataReader reader = command.ExecuteReader();
+            try
+            {
+                if (reader.HasRows)
+                {
+                    if (reader.Read())
+                    {
+                        leftID = reader.GetInt32(0);
+                        leftCount = reader.GetDouble(5);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                reader.Close();
+            }
+
+            return leftID;
         }
 
         private int getLastBillID()
@@ -267,7 +340,7 @@ namespace Ukrsklad.Domain
 
         private string createBillSQL(int firmaID, int billNumber, DateTime billDate, string client, decimal price, decimal totalPrice, int clientID, decimal pdv, int nuID, int skladID, decimal currentPrice, decimal currentTotalPrice, decimal currentPdv, int userID, DateTime billCreated, DateTime billModified)
         {
-            return string.Format(insertVNAKL, firmaID, billNumber, billDate.ToString(dateFormat), client, price, totalPrice, clientID, pdv, nuID, skladID, currentPrice, currentTotalPrice, currentPdv, userID, billCreated.ToString(dateFormat), billModified.ToString(dateFormat));
+            return string.Format(insertVNAKL, firmaID, billNumber, billDate.ToString(dateFormat), client, price, totalPrice, clientID, pdv, nuID, skladID, currentPrice, currentTotalPrice, currentPdv, userID, billCreated.ToString(dateTimeFormat), billModified.ToString(dateTimeFormat));
         }
 
         private string createBillContentSQL(int billID, string tovarName, int tovarID, string odVymiru, double count, decimal price, decimal totalPrice, decimal currentPrice, decimal currentTotalPrice, int skladID, decimal sumPrice, decimal currentSumPrice)
@@ -277,7 +350,7 @@ namespace Ukrsklad.Domain
 
         private string createTovarMoveSQL(int billID, DateTime date, int tovarID, int FromFirmaID, int FromSkladID, double fromCount, decimal fromPrice, decimal fromSum, int toFirmaID, int toSkladID, double toCount, decimal toPrice, decimal toSum, decimal currentFromPrice, decimal currentFromSum, decimal currentToPrice, decimal currentToSum, decimal pricePDV, decimal sumPDV, decimal currentPricePDV, decimal currentSumPDV)
         {
-            return string.Format(insertTOVAR_MOVE, billID, date.ToString(dateFormat), tovarID, FromFirmaID, FromSkladID, fromCount, fromPrice, fromSum, toFirmaID, toSkladID, toCount, toPrice, toSum, currentFromPrice, currentFromSum, currentToPrice, currentToSum, pricePDV, sumPDV, currentPricePDV, currentSumPDV);
+            return string.Format(insertTOVAR_MOVE, billID, date.ToString(dateTimeFormat), tovarID, FromFirmaID, FromSkladID, fromCount, fromPrice, fromSum, toFirmaID, toSkladID, toCount, toPrice, toSum, currentFromPrice, currentFromSum, currentToPrice, currentToSum, pricePDV, sumPDV, currentPricePDV, currentSumPDV);
         }
 
         private string updateBillPriceSQL(int billID, decimal price)
