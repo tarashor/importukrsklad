@@ -42,7 +42,7 @@ namespace UkrskladImporter
                 bill.Tovars.Add(createTovar(scannerTovarId, billfromScanner.Tovars[scannerTovarId]));
             }
 
-            bill.FromClient = getClient(defaultFromClientID);
+            bill.FromClient = getActiveFirm(defaultFromClientID);
             bill.ToClient = getClient(clientID);
             return bill;
         }
