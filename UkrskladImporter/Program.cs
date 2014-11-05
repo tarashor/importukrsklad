@@ -29,7 +29,7 @@ namespace UkrskladImporter
 
         private static string getLicenseKey()
         {
-            throw new NotImplementedException();
+            return getActualKey();
         }
 
         private static string getActualKey()

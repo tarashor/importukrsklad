@@ -29,6 +29,16 @@ namespace ScannerExporter
                 BillScanner bill = db.GetBillForClient(clientId);
                 bills.Add(bill);
             }
+
+            /*List<BillScanner> bills = new List<BillScanner>();
+            BillScanner bill = new BillScanner();
+            bill.ClientID = 4;
+            bill.ClientName = "Консенсія";
+            bill.OutDate = DateTime.Now;
+            bill.Tovars.Add(2, 10);
+            bill.Tovars.Add(3, 5);
+            bill.Tovars.Add(5, 15);
+            bills.Add(bill);*/
             billsCheckListBox.Items.Clear();
             billsCheckListBox.Items.AddRange(bills.ToArray());
         }
