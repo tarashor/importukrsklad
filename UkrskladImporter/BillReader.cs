@@ -77,25 +77,23 @@ namespace UkrskladImporter
 
         private string mapScannerIdToKod(int scannerId)
         {
-            return scannerId.ToString();
-            /*string ukrskladID;
+            string ukrskladID;
             if (goodsMapScannerToUkrsklad.TryGetValue(scannerId, out ukrskladID)) 
             {
                 return ukrskladID;
             }
-            throw new ArgumentException("Немає відповідності у файлі для товару з кодом:" + scannerId.ToString());*/
+            throw new ArgumentException("Немає відповідності у файлі для товару з кодом:" + scannerId.ToString());
             
         }
 
         private int mapScannerClientIdToUkrskladId(int scannerClientID)
         {
-            return -20;
-            /*int ukrskladID;
+            int ukrskladID;
             if (clientMapScannerToUkrsklad.TryGetValue(scannerClientID, out ukrskladID))
             {
                 return ukrskladID;
             }
-            throw new ArgumentException("Немає відповідності у файлі для клієнта з кодом:" + scannerClientID.ToString());*/
+            throw new ArgumentException("Немає відповідності у файлі для клієнта з кодом:" + scannerClientID.ToString());
         }
     }
 }
