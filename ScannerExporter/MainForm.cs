@@ -19,6 +19,7 @@ namespace ScannerExporter
     {
         private readonly IScannerDB db;
         private const string fileNameTemplate = @"{0}.vnakl";
+        private bool isTrial;
 
         public MainForm()
         {

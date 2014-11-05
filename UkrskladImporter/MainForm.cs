@@ -24,10 +24,14 @@ namespace UkrskladImporter
         private IList<Price> prices;
         private BillReader billReader;
         private int userID;
+        private bool isTrial;
 
-        public MainForm()
+        public MainForm(bool isTrial)
         {
             InitializeComponent();
+
+            this.isTrial = isTrial;
+
             try
             {
                 string dbLocation = ConfigurationManager.AppSettings["DBLocation"];
@@ -58,6 +62,7 @@ namespace UkrskladImporter
             billReader = new BillReader(clients, activeFirms, defaultActiveFirm, goodsMap, clientMap);
         }
 
+        
         private static int getDefaultActiveFirm()
         {
             int defaultActiveFirm = 1;
