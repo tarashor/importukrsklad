@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UkrskladImporter", "Ukrskla
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ukrsklad.Domain", "Ukrsklad.Domain\Ukrsklad.Domain.csproj", "{A7F0CBB4-AFFB-4E29-8D73-BD621EFFBD03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExportSkaner", "ExportSkaner\ExportSkaner.csproj", "{21C8D598-9D45-44A7-96A7-D6EAE30B7EF0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExportScanner.Domain", "ExportScanner.Domain\ExportScanner.Domain.csproj", "{05723747-CE3A-40EE-8155-9595F15552D8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScannerExporter", "ScannerExporter\ScannerExporter.csproj", "{8077A80B-D74E-49C0-AE9A-FA9B267DA889}"
@@ -25,10 +23,6 @@ Global
 		{A7F0CBB4-AFFB-4E29-8D73-BD621EFFBD03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7F0CBB4-AFFB-4E29-8D73-BD621EFFBD03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7F0CBB4-AFFB-4E29-8D73-BD621EFFBD03}.Release|Any CPU.Build.0 = Release|Any CPU
-		{21C8D598-9D45-44A7-96A7-D6EAE30B7EF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{21C8D598-9D45-44A7-96A7-D6EAE30B7EF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{21C8D598-9D45-44A7-96A7-D6EAE30B7EF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{21C8D598-9D45-44A7-96A7-D6EAE30B7EF0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{05723747-CE3A-40EE-8155-9595F15552D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{05723747-CE3A-40EE-8155-9595F15552D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05723747-CE3A-40EE-8155-9595F15552D8}.Release|Any CPU.ActiveCfg = Release|Any CPU

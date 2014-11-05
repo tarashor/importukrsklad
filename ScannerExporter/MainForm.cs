@@ -4,14 +4,8 @@ using ExportScanner.Domain.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Configuration;
+using System.Windows.Forms;
 
 namespace ScannerExporter
 {
@@ -19,7 +13,6 @@ namespace ScannerExporter
     {
         private readonly IScannerDB db;
         private const string fileNameTemplate = @"{0}.vnakl";
-        private bool isTrial;
 
         public MainForm()
         {

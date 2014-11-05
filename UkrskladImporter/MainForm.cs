@@ -171,9 +171,9 @@ namespace UkrskladImporter
 
         private void loadBill(Bill bill) {
             this.bill = bill;
-            /*foreach (Tovar tovar in bill.Tovars) {
+            foreach (Tovar tovar in bill.Tovars) {
                 tovar.Name = db.GetTovarName(tovar.KOD);
-            }*/
+            }
             tovars.DataSource = bill.Tovars;
             activeFirmComboBox.SelectedItem = bill.FromClient;
             clientsComboBox.SelectedItem = bill.ToClient;
@@ -226,9 +226,33 @@ namespace UkrskladImporter
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (bill != null)
+            bool canSave = true;
+            int savesCount = 0;
+            if (isTrial)
             {
-                db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars));
+                canSave = false;
+                savesCount = TrialLimitation.GetCounter();
+                if (savesCount < TrialLimitation.MaxCounter) {
+                    canSave = true;
+                }
+            }
+
+            if (canSave)
+            {
+                if (bill != null)
+                {
+                    db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars));
+                    string saveMessage = "Накладна збережена!";
+                    if (isTrial) {
+                        savesCount++;
+                        TrialLimitation.SaveCounter(savesCount);
+                    }
+                    MessageBox.Show(saveMessage);
+                }
+                
+            }
+            else{
+                MessageBox.Show(string.Format("Ви не можете більше використовувати пробну версію програми. Ви досягли максимальної кількості збережених накладних {0}!", TrialLimitation.MaxCounter));
             }
         }
 
