@@ -18,6 +18,8 @@ namespace UkrskladImporter
         private IDictionary<int, string> goodsMapScannerToUkrsklad;
         private int defaultFromClientID;
 
+        public string Log { get; set; }
+
         public BillReader(IList<Client> clients, IList<Client> activeFirms, int defaultFromClientID, IDictionary<int, string> goodsMapScannerToUkrsklad, IDictionary<int, int> clientMapScannerToUkrsklad) 
         { 
             this.clients = clients;
@@ -36,14 +38,31 @@ namespace UkrskladImporter
         private Bill convertBill(BillScanner billfromScanner)
         {
             Bill bill = new Bill();
-            int clientID = mapScannerClientIdToUkrskladId(billfromScanner.ClientID);
+            Log = string.Empty;
+            try
+            {
+                int clientID = mapScannerClientIdToUkrskladId(billfromScanner.ClientID);
+                bill.ToClient = getClient(clientID);
+            }
+            catch (ArgumentException ae) {
+                Log += ae.Message + "\r\n";
+            }
+
             foreach(int scannerTovarId in billfromScanner.Tovars.Keys)
             {
-                bill.Tovars.Add(createTovar(scannerTovarId, billfromScanner.Tovars[scannerTovarId]));
+                try
+                {
+                    Tovar tovar = createTovar(scannerTovarId, billfromScanner.Tovars[scannerTovarId]);
+                    bill.Tovars.Add(tovar);
+                }
+                catch (ArgumentException ae)
+                {
+                    Log += ae.Message + "\r\n";
+                }
             }
 
             bill.FromClient = getActiveFirm(defaultFromClientID);
-            bill.ToClient = getClient(clientID);
+            
             return bill;
         }
 

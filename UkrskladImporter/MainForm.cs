@@ -17,7 +17,7 @@ namespace UkrskladImporter
     public partial class MainForm : Form
     {
         private Bill bill;
-        private UkrskladDB db;
+        private UkrskladDB4 db;
         private IList<Client> clients;
         private IList<Client> activeFirms;
         private IList<Sklad> sklads;
@@ -35,8 +35,9 @@ namespace UkrskladImporter
             try
             {
                 string dbLocation = ConfigurationManager.AppSettings["DBLocation"];
+                string dbhost = ConfigurationManager.AppSettings["DBHost"];
                 bool isLocal = ConfigurationManager.AppSettings["DBIsLocal"] == "1" ? true : false;
-                db = new UkrskladDB(dbLocation, isLocal);
+                db = new UkrskladDB4(dbhost, dbLocation, isLocal);
                 clients = db.GetClients();
                 activeFirms = db.GetClients();
                 sklads = db.GetSklads();
@@ -160,7 +161,12 @@ namespace UkrskladImporter
             if (dialogResult == System.Windows.Forms.DialogResult.OK) {
                 try
                 {
+                    progress.Value = 0;
+                    logTextBox.Text = "Зчитування файлу\r\n";
+                    
                     Bill b = billReader.ReadFromFile(openFileDialog.FileName);
+                    logTextBox.Text += billReader.Log;
+                    progress.Value = 50;
                     loadBill(b);
                 }
                 catch (ArgumentException ae) {
@@ -172,8 +178,15 @@ namespace UkrskladImporter
         private void loadBill(Bill bill) {
             this.bill = bill;
             foreach (Tovar tovar in bill.Tovars) {
-                tovar.Name = db.GetTovarName(tovar.KOD);
+                try
+                {
+                    tovar.Name = db.GetTovarName(tovar.KOD);
+                }
+                catch (ArgumentException ae) {
+                    logTextBox.Text += ae.Message + "\r\n";
+                }
             }
+            progress.Value = 90;
             tovars.DataSource = bill.Tovars;
             activeFirmComboBox.SelectedItem = bill.FromClient;
             clientsComboBox.SelectedItem = bill.ToClient;
@@ -181,7 +194,11 @@ namespace UkrskladImporter
 
             enableClientCheckBox.Checked = false;
             enableFirmCheckBox.Checked = false;
-            
+            logTextBox.Text += "Відкриття файлу завершено!";
+            string logFile = string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyyMMddhhmmss"), "read" );
+            System.IO.File.WriteAllText(logFile, logTextBox.Text);
+            progress.Value = 100;
+            progress.Value = 0;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -241,13 +258,21 @@ namespace UkrskladImporter
             {
                 if (bill != null)
                 {
-                    db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars));
-                    string saveMessage = "Накладна збережена!";
-                    if (isTrial) {
-                        savesCount++;
-                        TrialLimitation.SaveCounter(savesCount);
+                    if (bill.Sklad != null)
+                    {
+                        db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars));
+                        string saveMessage = "Накладна збережена!";
+                        if (isTrial)
+                        {
+                            savesCount++;
+                            TrialLimitation.SaveCounter(savesCount);
+                            saveMessage += string.Format("\r\nВи можете зберегти накладну ще {0} разів!.", TrialLimitation.MaxCounter - savesCount);
+                        }
+                        MessageBox.Show(saveMessage);
                     }
-                    MessageBox.Show(saveMessage);
+                    else {
+                        MessageBox.Show("Склад не задано! Вмиберіть склад.");
+                    }
                 }
                 
             }

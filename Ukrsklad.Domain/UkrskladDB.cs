@@ -1,6 +1,7 @@
 ﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -12,34 +13,7 @@ namespace Ukrsklad.Domain
 {
     public class UkrskladDB : IUkrskladDB, IDisposable
     {
-        private FbConnection connection;
-
-        public UkrskladDB(string databaseLocation, bool isLocal) {
-            string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            CultureInfo ci = new CultureInfo(sCurrentCulture);
-            ci.NumberFormat.NumberDecimalSeparator = ".";
-            System.Threading.Thread.CurrentThread.CurrentCulture = ci;
-
-            FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
-            cs.Database = databaseLocation;
-            cs.UserID = "SYSDBA";
-            cs.Password = "masterkey";
-            cs.Charset = "NONE";
-            cs.Pooling = false;
-            if (isLocal)
-            {
-                cs.ServerType = FbServerType.Embedded;
-            }
-            else
-            {
-                cs.DataSource = "localhost";
-                cs.Port = 3050;
-            }
-
-            connection = new FbConnection(cs.ToString());
-            connection.Open();
-
-        }
+        protected FbConnection connection;
 
         private const string insertVNAKL = @"INSERT INTO VNAKL (NUM,    FIRMA_ID,   NU,     DATE_DOK,    CLIENT,             CENA,       CENA_PDV,       CENA_ZNIG,      DOV_SER,        DOV_NUM,        DOV_DATA,       DOV_FIO,        CLIENT_ID,      PDV,        PROD_UMOV,      ZNIG_TYPE,      POD_REKL_PER,       POD_REKL_CH,   FIO_BUH,    NU_ID,      SKLAD_ID,   CURR_TYPE,      CURR_CENA,      CURR_CENA_PDV,      CURR_CENA_ZNIG,     CURR_PDV,       CURR_POD_REKL_CH,   CLIENT_RAH_ID,  AFIRM_RAH_ID,       DOPOLN,         CENA_TOV_TRANS, CURR_CENA_TOV_TRANS,    IS_MOVE,    DOC_MARK_TYPE,      DOC_USER_ID,        DOC_CREATE_TIME,    DOC_MODIFY_TIME,    DOC_DESCR,      ARTICLE_ID, TTN_NU, TTN_DATE_DOK, TTN_DOR_LIST, TTN_AVTO, TTN_AVTO_PIDPR, TTN_VODITEL, TTN_ADR_FROM, TTN_ADR_TO, IM_NUM, ZNIG_PROC, TTN_AVTO_PRIC, TTN_VID_PEREV, TTN_KOLVO_MIS, TTN_MAS_BRUT, PDV_TYPE)
                                                         VALUES (NULL,   {0},        '{1}',  '{2}',       '{3}',              {4},        {5},            0,              '',             '',             NULL,           '',             {6},            {7},        '',             0,              NULL,               0,             NULL,       {8},        {9},        0,              {10},           {11},               0,                  {12},           0,                  0,              0,                  '',             0, 0,                                   1,          0,                  {13},               '{14}',             '{15}',             '',             0, '', '1899-12-30 00:00:00', '', '', '', '', '', '', -1, 0, '', '', '', '', 0);";
@@ -57,10 +31,38 @@ namespace Ukrsklad.Domain
 
         private const string updateBillPrice = @"UPDATE VNAKL SET CENA = {0}, CENA_PDV = {1}, PDV = {2}, CURR_CENA = {3}, CURR_CENA_PDV = {4}, CURR_PDV = {5} WHERE (NUM = {6});";
 
+        private const string updateClientSuma = @"UPDATE CLIENT SET CLIENT_SUMA = {0} WHERE (NUM = {1});";
+
         private const string dateTimeFormat = "yyyy-MM-dd hh:mm:ss";
 
         private const string dateFormat = "yyyy-MM-dd 00:00:00";
 
+
+        public UkrskladDB(string host, string databaseLocation, bool isLocal) {
+            string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            CultureInfo ci = new CultureInfo(sCurrentCulture);
+            ci.NumberFormat.NumberDecimalSeparator = ".";
+            System.Threading.Thread.CurrentThread.CurrentCulture = ci;
+
+            FbConnectionStringBuilder cs = new FbConnectionStringBuilder();
+            cs.Database = databaseLocation;
+            cs.UserID = "SYSDBA";
+            cs.Password = "masterkey";
+            cs.Charset = "NONE";
+            cs.Pooling = false;
+            if (isLocal)
+            {
+                cs.ServerType = FbServerType.Embedded;
+            }
+            else
+            {
+                cs.DataSource = host;
+                cs.Port = 3050;
+            }
+
+            connection = new FbConnection(cs.ToString());
+            connection.Open();
+        }
 
         public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars)
         {
@@ -72,14 +74,22 @@ namespace Ukrsklad.Domain
                 total += addTovarToBill(billID, InputTovar.TovarKOD, InputTovar.Count, priceType, sklad.ID, fromClient.ID, toClient.ID);
             }
 
-            setTotal(billID, total);
+            setTotalInBill(billID, total);
+            setTotalForClient(toClient.ID, total);
         }
 
-        private void setTotal(int billID, decimal total)
+        private void setTotalForClient(int clientID, decimal total)
+        {
+            decimal sum = getClientSum(clientID);
+            sum -= total;
+            string updateSQL = getUpdateClientSumSQL(clientID, sum);
+            executeNonQuery(updateSQL);
+        }
+
+        private void setTotalInBill(int billID, decimal total)
         {
             string updateSQL = updateBillPriceSQL(billID, total);
-            FbCommand command = new FbCommand(updateSQL, connection);
-            command.ExecuteNonQuery();
+            executeNonQuery(updateSQL);
         }
 
         private decimal addTovarToBill(int billID, string tovarID, double count, PriceType priceType, int skladID, int fromClientID, int toClientID)
@@ -90,11 +100,9 @@ namespace Ukrsklad.Domain
             decimal sum = (decimal)count * price;
 
             string billContentSQL = createBillContentSQL(billID, InputTovar.Name, InputTovar.ID, InputTovar.MeasurementUnits, count, price, pricePDV, price, pricePDV, skladID, sum, sum);
-            FbCommand command = new FbCommand(billContentSQL, connection);
-            command.ExecuteNonQuery();
+            executeNonQuery(billContentSQL);
 
             createTovarMove(billID, InputTovar.ID, fromClientID, skladID, count, price, toClientID);
-            //update
             updateTovarLeft(InputTovar.ID, skladID, fromClientID, count, InputTovar.Cina, InputTovar.CinaRozdrib, InputTovar.CinaOptova, InputTovar.Cina1, InputTovar.Cina2);
 
             return sum;
@@ -106,7 +114,7 @@ namespace Ukrsklad.Domain
             int? leftID = getLeftCountOfTovar(tovarID, skladID, fromClientID, out leftCount);
             if (leftID.HasValue)
             {
-                leftCount = leftCount - count;
+                leftCount -= count;
                 updateLeftCountTovar(leftID.Value, leftCount);
             }
             else 
@@ -117,16 +125,14 @@ namespace Ukrsklad.Domain
 
         private void updateLeftCountTovar(int leftID, double leftCount)
         {
-            string updateLeftSQL = string.Format(updateTOVAR_ZAL, leftCount, leftID);
-            FbCommand command = new FbCommand(updateLeftSQL, connection);
-            command.ExecuteNonQuery();
+            string updateLeftSQL = getUpdateTovarLeftSQL(leftID, leftCount);
+            executeNonQuery(updateLeftSQL);
         }
 
         private void insertLeftCountTovar(int tovarID, int skladID, int fromClientID, double leftCount, decimal cina, decimal cinar, decimal cinao, decimal cina1, decimal cina2)
         {
-            string insertLeftSQL = string.Format(insertTOVAR_ZAL, fromClientID, tovarID, skladID, leftCount, cina, cinar, cinao, cina1, cina2);
-            FbCommand command = new FbCommand(insertLeftSQL, connection);
-            command.ExecuteNonQuery();
+            string insertLeftSQL = getInsertTovarLeftSQL(tovarID, skladID, fromClientID, leftCount, cina, cinar, cinao, cina1, cina2);
+            executeNonQuery(insertLeftSQL);
         }
 
         private void createTovarMove(int billID, int tovarID, int fromFirmaID, int fromSkladID, double count, decimal price, int toFirmaID)
@@ -136,107 +142,76 @@ namespace Ukrsklad.Domain
             decimal sumPDV = PDVUtility.getPDV(sum);
             int toSkladId = 0; //because it is out 
             string insertTovarMove = createTovarMoveSQL(billID, DateTime.Today, tovarID, fromFirmaID, fromSkladID, count, price, sum, toFirmaID, toSkladId, count, price, sum, price, sum, price, sum, pricePDV, sumPDV, pricePDV, sumPDV);
-            FbCommand command = new FbCommand(insertTovarMove, connection);
-            command.ExecuteNonQuery();
+            executeNonQuery(insertTovarMove);
         }
 
         private void createBillHeader(int billNumber, int skladID, int fromClientID, int toClientID, int userID)
         {
             string clientName = getClientNameByID(toClientID);
             string billSQL = createBillSQL(fromClientID, billNumber, DateTime.Today, clientName, 0, 0, toClientID, 0, billNumber, skladID, 0, 0, 0, userID, DateTime.Now, DateTime.Now);
-            FbCommand command = new FbCommand(billSQL, connection);
-            command.ExecuteNonQuery();
+            executeNonQuery(billSQL);
         }
 
         private int? getLeftCountOfTovar(int tovarID, int skladID, int clientID, out double leftCount)
         {
-            leftCount = 0;
+            double count = 0;
             int? leftID = null;
-            string sql = string.Format("select * from TOVAR_ZAL where FIRMA_ID={0} and TOVAR_ID={1} and SKLAD_ID={2}",clientID, tovarID, skladID);
-            FbCommand command = new FbCommand(sql, connection);
-            FbDataReader reader = command.ExecuteReader();
-            try
+            string sql = getSelectTovarLeftSQL(tovarID, skladID, clientID);
+            executeSelect(sql, (reader) =>
             {
-                if (reader.HasRows)
-                {
-                    if (reader.Read())
-                    {
-                        leftID = reader.GetInt32(0);
-                        leftCount = reader.GetDouble(5);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            finally
-            {
-                reader.Close();
-            }
-
+                leftID = reader.GetInt32(0); 
+                count = reader.GetDouble(4);
+            });
+            leftCount = count;
             return leftID;
         }
+        
 
         private int getLastBillID()
         {
             int lastBillID = -1;
-            string sql = "select * from VNAKL ORDER BY NUM DESC";
-            FbCommand command = new FbCommand(sql, connection);
-            FbDataReader reader = command.ExecuteReader();
-            try
+            string sql = getSelectVNAKLOrderedByNumDESC();
+            executeSelect(sql, (reader) =>
             {
-                if (reader.HasRows)
-                {
-                    if (reader.Read())
-                    {
-                        lastBillID = reader.GetInt32(0);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            finally
-            {
-                reader.Close();
-            }
-
+                lastBillID = reader.GetInt32(0);
+            });
             return lastBillID;
         }
 
         private int getBiggestBillNumber()
         {
             int biggestBillNumber = -1;
-            string sql = "select * from VNAKL ORDER BY NU DESC";
-            FbCommand command = new FbCommand(sql, connection);
-            FbDataReader reader = command.ExecuteReader();
-            try
+            string sql = getSelectVNAKLOrderedByNUDESC();
+            executeSelect(sql, (reader) =>
             {
-                if (reader.HasRows)
-                {
-                    if (reader.Read())
-                    {
-                        biggestBillNumber = reader.GetInt32(2);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            finally
-            {
-                reader.Close();
-            }
-
+                biggestBillNumber = reader.GetInt32(2);
+            });
             return biggestBillNumber;
         }
 
-        private string getClientNameByID( int clientID)
+        private string getClientNameByID(int clientID)
         {
             string clientName = string.Empty;
+            string sql = getSelectClientNameByID(clientID);
+            executeSelect(sql, (reader) =>
+             {
+                 for (int i = 0; i < reader.FieldCount; i++)
+                 {
+                     if (reader.GetName(i) == "FIO")
+                     {
+                         clientName = reader.GetString(i);
+                         break;
+                     }
+                 }
+             });
+            return clientName;
+        }
+
+        
+
+        private decimal getClientSum(int clientID)
+        {
+            decimal clientSum = 0;
             string sql = "select * from CLIENT where NUM=" + clientID.ToString();
             FbCommand command = new FbCommand(sql, connection);
             FbDataReader reader = command.ExecuteReader();
@@ -248,9 +223,9 @@ namespace Ukrsklad.Domain
                     {
                         for (int i = 0; i < reader.FieldCount; i++)
                         {
-                            if (reader.GetName(i) == "FIO")
+                            if (reader.GetName(i) == "CLIENT_SUMA")
                             {
-                                clientName = reader.GetString(i);
+                                clientSum = reader.GetDecimal(i);
                                 break;
                             }
                         }
@@ -266,7 +241,7 @@ namespace Ukrsklad.Domain
                 reader.Close();
             }
 
-            return clientName;
+            return clientSum;
         }
 
         private UkrskladTovar getTovarByKOD(string tovarKOD)
@@ -356,6 +331,41 @@ namespace Ukrsklad.Domain
         private string updateBillPriceSQL(int billID, decimal price)
         {
             return string.Format(updateBillPrice, price, PDVUtility.getPriceWithPDV(price), PDVUtility.getPDV(price), price, PDVUtility.getPriceWithPDV(price), PDVUtility.getPDV(price), billID);
+        }
+
+        private string getUpdateClientSumSQL(int clientID, decimal sum)
+        {
+            return string.Format(updateClientSuma, sum, clientID);
+        }
+
+        private string getUpdateTovarLeftSQL(int leftID, double leftCount)
+        {
+            return string.Format(updateTOVAR_ZAL, leftCount, leftID);
+        }
+
+        private string getInsertTovarLeftSQL(int tovarID, int skladID, int fromClientID, double leftCount, decimal cina, decimal cinar, decimal cinao, decimal cina1, decimal cina2)
+        {
+            return string.Format(insertTOVAR_ZAL, fromClientID, tovarID, skladID, leftCount, cina, cinar, cinao, cina1, cina2);
+        }
+
+        private string getSelectTovarLeftSQL(int tovarID, int skladID, int clientID)
+        {
+            return string.Format("select * from TOVAR_ZAL where FIRMA_ID={0} and TOVAR_ID={1} and SKLAD_ID={2}", clientID, tovarID, skladID);
+        }
+
+        private string getSelectVNAKLOrderedByNumDESC()
+        {
+            return "select * from VNAKL ORDER BY NUM DESC";
+        }
+
+        private string getSelectVNAKLOrderedByNUDESC()
+        {
+            return "select * from VNAKL ORDER BY NU DESC";
+        }
+
+        private string getSelectClientNameByID(int clientID)
+        {
+            return "select * from CLIENT where NUM=" + clientID.ToString();
         }
 
         private decimal getPrice(UkrskladTovar InputTovar, PriceType priceType)
@@ -468,7 +478,41 @@ namespace Ukrsklad.Domain
 
         public string GetTovarName(string kod)
         {
-            return getTovarByKOD(kod).Name;
+            UkrskladTovar tovar = getTovarByKOD(kod);
+            if (tovar != null){
+                return tovar.Name;
+            }
+            throw new ArgumentException(string.Format("У базі даних немає товару з кодом {0}", kod));
+        }
+
+        private void executeSelect(string selectSQL, Action<DbDataReader> action)
+        {
+            FbCommand command = new FbCommand(selectSQL, connection);
+            FbDataReader reader = command.ExecuteReader();
+            try
+            {
+                if (reader.HasRows)
+                {
+                    if (reader.Read())
+                    {
+                        action(reader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                reader.Close();
+            }
+        }
+
+        private void executeNonQuery(string SQL)
+        {
+            FbCommand command = new FbCommand(SQL, connection);
+            command.ExecuteNonQuery();
         }
     }
 }
