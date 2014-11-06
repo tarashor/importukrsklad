@@ -24,7 +24,7 @@ namespace UkrskladImporter
             string licenseKey = getLicenseKey();
             bool isTrial = key == licenseKey;
 
-            Application.Run(new MainForm(isTrial));
+            Application.Run(new MainForm(true));
         }
 
         private static string getLicenseKey()
