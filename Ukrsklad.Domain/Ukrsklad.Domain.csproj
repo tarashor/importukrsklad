@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UkrskladDB4.cs" />
     <Compile Include="UkrskladDB.cs" />
     <Compile Include="UkrskladDB5.cs" />
     <Compile Include="IUkrskladDB.cs" />
@@ -48,7 +49,6 @@
     <Compile Include="Model\Sklad.cs" />
     <Compile Include="Model\UkrskladTovar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UkrskladDB4.cs" />
     <Compile Include="Utility\PDVUtility.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
