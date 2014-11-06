@@ -13,7 +13,7 @@ namespace UkrskladImporter
             throw new NotImplementedException();
         }
 
-        public static int MaxCounter { get; set; }
+        public const int MaxCounter = 10;
 
         internal static void SaveCounter(int savesCount)
         {
