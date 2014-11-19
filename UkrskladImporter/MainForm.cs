@@ -17,7 +17,7 @@ namespace UkrskladImporter
     public partial class MainForm : Form
     {
         private Bill bill;
-        private UkrskladDB4 db;
+        private IUkrskladDB db;
         private IList<Client> clients;
         private IList<Client> activeFirms;
         private IList<Sklad> sklads;
@@ -37,7 +37,16 @@ namespace UkrskladImporter
                 string dbLocation = ConfigurationManager.AppSettings["DBLocation"];
                 string dbhost = ConfigurationManager.AppSettings["DBHost"];
                 bool isLocal = ConfigurationManager.AppSettings["DBIsLocal"] == "1" ? true : false;
-                db = new UkrskladDB4(dbhost, dbLocation, isLocal);
+                Logger logger = new Logger(string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyyMMddhhmmss"), "write"));
+                if (ConfigurationManager.AppSettings["DBVersion"] == "4")
+                {
+                    db = new UkrskladDB4(dbhost, dbLocation, isLocal, logger);
+                }
+                else 
+                {
+                    db = new UkrskladDB5(dbhost, dbLocation, isLocal, logger);
+                }
+                
                 clients = db.GetClients();
                 activeFirms = db.GetClients();
                 sklads = db.GetSklads();
@@ -53,6 +62,7 @@ namespace UkrskladImporter
             }
 
             int defaultActiveFirm = getDefaultActiveFirm();
+            int defaultSklad = getDefaultSklad();
 
             string scannerToUkrskladClientsFile = ConfigurationManager.AppSettings["scannerToUkrskladClients"];
             string scannerToUkrskladGoodsFile = ConfigurationManager.AppSettings["scannerToUkrskladGoods"];
@@ -60,7 +70,7 @@ namespace UkrskladImporter
             IDictionary<int, int> clientMap = getClientMapScannerToUkrsklad(scannerToUkrskladClientsFile);
             IDictionary<int, string> goodsMap = getGoodsMapScannerToUkrsklad(scannerToUkrskladGoodsFile);
 
-            billReader = new BillReader(clients, activeFirms, defaultActiveFirm, goodsMap, clientMap);
+            billReader = new BillReader(clients, activeFirms, sklads, defaultActiveFirm, defaultSklad, goodsMap, clientMap);
         }
 
         
@@ -77,6 +87,21 @@ namespace UkrskladImporter
             }
 
             return defaultActiveFirm;
+        }
+
+        private static int getDefaultSklad()
+        {
+            int defaultSklad = 1;
+            try
+            {
+                defaultSklad = int.Parse(ConfigurationManager.AppSettings["defaultSkladID"]);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Неправильно заданий активний склад у конфігураційному файлі.");
+            }
+
+            return defaultSklad;
         }
 
         private IDictionary<int, int> getClientMapScannerToUkrsklad(string filename)

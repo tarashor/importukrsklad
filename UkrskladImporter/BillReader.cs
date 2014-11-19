@@ -14,17 +14,21 @@ namespace UkrskladImporter
     {
         private IList<Client> clients;
         private IList<Client> activeFirms;
+        private IList<Sklad> sklads;
         private IDictionary<int, int> clientMapScannerToUkrsklad;
         private IDictionary<int, string> goodsMapScannerToUkrsklad;
         private int defaultFromClientID;
+        private int defaultSkladID;
 
         public string Log { get; set; }
 
-        public BillReader(IList<Client> clients, IList<Client> activeFirms, int defaultFromClientID, IDictionary<int, string> goodsMapScannerToUkrsklad, IDictionary<int, int> clientMapScannerToUkrsklad) 
+        public BillReader(IList<Client> clients, IList<Client> activeFirms, IList<Sklad> sklads, int defaultFromClientID, int defaultSkladID, IDictionary<int, string> goodsMapScannerToUkrsklad, IDictionary<int, int> clientMapScannerToUkrsklad) 
         { 
             this.clients = clients;
             this.activeFirms = activeFirms;
+            this.sklads = sklads;
             this.defaultFromClientID = defaultFromClientID;
+            this.defaultSkladID = defaultSkladID;
             this.clientMapScannerToUkrsklad = clientMapScannerToUkrsklad;
             this.goodsMapScannerToUkrsklad = goodsMapScannerToUkrsklad;
         }
@@ -62,6 +66,7 @@ namespace UkrskladImporter
             }
 
             bill.FromClient = getActiveFirm(defaultFromClientID);
+            bill.Sklad = getSklad(defaultSkladID);
             
             return bill;
         }
@@ -83,6 +88,16 @@ namespace UkrskladImporter
             {
                 if (client.ID == activeFirmID)
                     return client;
+            }
+            return null;
+        }
+
+        private Sklad getSklad(int skladId)
+        {
+            foreach (Sklad sklad in sklads)
+            {
+                if (sklad.ID == skladId)
+                    return sklad;
             }
             return null;
         }

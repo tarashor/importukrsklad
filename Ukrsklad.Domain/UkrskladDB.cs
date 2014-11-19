@@ -11,11 +11,13 @@ using Ukrsklad.Domain.Utility;
 
 namespace Ukrsklad.Domain
 {
-    public abstract class UkrskladDB : IUkrskladDB, IDisposable
+    public abstract class UkrskladDB : IUkrskladDB
     {
         protected FbConnection connection;
+        protected ILogger logger;
 
-        protected UkrskladDB(string host, string databaseLocation, bool isLocal) {
+        protected UkrskladDB(string host, string databaseLocation, bool isLocal, ILogger logger) {
+            this.logger = logger;
             string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
             CultureInfo ci = new CultureInfo(sCurrentCulture);
             ci.NumberFormat.NumberDecimalSeparator = ".";
@@ -92,7 +94,7 @@ namespace Ukrsklad.Domain
             return sklads;
         }
 
-        
+
 
         public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars)
         {
@@ -105,15 +107,10 @@ namespace Ukrsklad.Domain
             }
 
             setTotalInBill(billID, total);
-            setTotalForClient(toClient.ID, total);
+            setAdditionalValues(userID, fromClient, toClient, priceType, sklad, tovars, total);
         }
 
-        private void setTotalForClient(int clientID, decimal total)
-        {
-            decimal sum = getClientSum(clientID);
-            sum -= total;
-            string updateSQL = getUpdateClientSumSQL(clientID, sum);
-            executeNonQuery(updateSQL);
+        protected virtual void setAdditionalValues(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, decimal total) { 
         }
 
         private void setTotalInBill(int billID, decimal total)
@@ -236,26 +233,7 @@ namespace Ukrsklad.Domain
              });
             return clientName;
         }
-
-
-
-        private decimal getClientSum(int clientID)
-        {
-            decimal clientSum = 0;
-            string sql = getSelectClientNameByID(clientID);
-            executeSelectOneRow(sql, (reader) =>
-               {
-                   for (int i = 0; i < reader.FieldCount; i++)
-                   {
-                       if (reader.GetName(i) == "CLIENT_SUMA")
-                       {
-                           clientSum = reader.GetDecimal(i);
-                           break;
-                       }
-                   }
-               });
-            return clientSum;
-        }
+        
 
         private UkrskladTovar getTovarByKOD(string tovarKOD)
         {
@@ -359,11 +337,13 @@ namespace Ukrsklad.Domain
         public void Dispose()
         {
             connection.Dispose();
+            logger.Close();
         }
 
         public void Close() 
         {
             connection.Close();
+            logger.Close();
         }
 
         public string GetTovarName(string kod)
@@ -375,8 +355,9 @@ namespace Ukrsklad.Domain
             throw new ArgumentException(string.Format("У базі даних немає товару з кодом {0}", kod));
         }
 
-        private void executeSelectOneRow(string selectSQL, Action<DbDataReader> action)
+        protected void executeSelectOneRow(string selectSQL, Action<DbDataReader> action)
         {
+            logger.Log(selectSQL);
             FbCommand command = new FbCommand(selectSQL, connection);
             FbDataReader reader = command.ExecuteReader();
             try
@@ -391,7 +372,7 @@ namespace Ukrsklad.Domain
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                logger.Log(e.Message);
             }
             finally
             {
@@ -399,8 +380,9 @@ namespace Ukrsklad.Domain
             }
         }
 
-        private void executeSelect(string selectSQL, Action<DbDataReader> action)
+        protected void executeSelect(string selectSQL, Action<DbDataReader> action)
         {
+            logger.Log(selectSQL);
             FbCommand command = new FbCommand(selectSQL, connection);
             FbDataReader reader = command.ExecuteReader();
             try
@@ -415,7 +397,7 @@ namespace Ukrsklad.Domain
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                logger.Log(e.Message);
             }
             finally
             {
@@ -423,10 +405,18 @@ namespace Ukrsklad.Domain
             }
         }
 
-        private void executeNonQuery(string SQL)
+        protected void executeNonQuery(string SQL)
         {
-            FbCommand command = new FbCommand(SQL, connection);
-            command.ExecuteNonQuery();
+            try
+            {
+                logger.Log(SQL);
+                FbCommand command = new FbCommand(SQL, connection);
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                logger.Log(ex.Message);
+            }
         }
     }
 }
