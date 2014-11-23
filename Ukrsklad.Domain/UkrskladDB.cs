@@ -96,14 +96,14 @@ namespace Ukrsklad.Domain
 
 
 
-        public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars)
+        public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, DateTime creationDate)
         {
-            createBillHeader(getBiggestBillNumber() + 1, sklad.ID, fromClient.ID, toClient.ID, userID);
+            createBillHeader(getBiggestBillNumber() + 1, sklad.ID, fromClient.ID, toClient.ID, userID, creationDate);
             int billID = getLastBillID();
             decimal total = 0;
             foreach (InputTovar InputTovar in tovars)
             {
-                total += addTovarToBill(billID, InputTovar.TovarKOD, InputTovar.Count, priceType, sklad.ID, fromClient.ID, toClient.ID);
+                total += addTovarToBill(billID, InputTovar.TovarKOD, InputTovar.Count, priceType, sklad.ID, fromClient.ID, toClient.ID, creationDate);
             }
 
             setTotalInBill(billID, total);
@@ -119,7 +119,7 @@ namespace Ukrsklad.Domain
             executeNonQuery(updateSQL);
         }
 
-        private decimal addTovarToBill(int billID, string tovarID, double count, PriceType priceType, int skladID, int fromClientID, int toClientID)
+        private decimal addTovarToBill(int billID, string tovarID, double count, PriceType priceType, int skladID, int fromClientID, int toClientID, DateTime tovarMoveDate)
         {
             UkrskladTovar InputTovar = getTovarByKOD(tovarID);
             decimal price = getPrice(InputTovar, priceType);
@@ -129,7 +129,7 @@ namespace Ukrsklad.Domain
             string billContentSQL = createBillContentSQL(billID, InputTovar.Name, InputTovar.ID, InputTovar.MeasurementUnits, count, price, pricePDV, price, pricePDV, skladID, sum, sum);
             executeNonQuery(billContentSQL);
 
-            createTovarMove(billID, InputTovar.ID, fromClientID, skladID, count, price, toClientID);
+            createTovarMove(billID, InputTovar.ID, fromClientID, skladID, count, price, toClientID, tovarMoveDate);
             updateTovarLeft(InputTovar.ID, skladID, fromClientID, count, InputTovar.Cina, InputTovar.CinaRozdrib, InputTovar.CinaOptova, InputTovar.Cina1, InputTovar.Cina2);
 
             return sum;
@@ -162,20 +162,20 @@ namespace Ukrsklad.Domain
             executeNonQuery(insertLeftSQL);
         }
 
-        private void createTovarMove(int billID, int tovarID, int fromFirmaID, int fromSkladID, double count, decimal price, int toFirmaID)
+        private void createTovarMove(int billID, int tovarID, int fromFirmaID, int fromSkladID, double count, decimal price, int toFirmaID, DateTime moveDate)
         {
             decimal sum = (decimal)count * price;
             decimal pricePDV = PDVUtility.getPDV(price);
             decimal sumPDV = PDVUtility.getPDV(sum);
             int toSkladId = 0; //because it is out 
-            string insertTovarMove = createTovarMoveSQL(billID, DateTime.Today, tovarID, fromFirmaID, fromSkladID, count, price, sum, toFirmaID, toSkladId, count, price, sum, price, sum, price, sum, pricePDV, sumPDV, pricePDV, sumPDV);
+            string insertTovarMove = createTovarMoveSQL(billID, moveDate, tovarID, fromFirmaID, fromSkladID, count, price, sum, toFirmaID, toSkladId, count, price, sum, price, sum, price, sum, pricePDV, sumPDV, pricePDV, sumPDV);
             executeNonQuery(insertTovarMove);
         }
 
-        private void createBillHeader(int billNumber, int skladID, int fromClientID, int toClientID, int userID)
+        private void createBillHeader(int billNumber, int skladID, int fromClientID, int toClientID, int userID, DateTime creationDate)
         {
             string clientName = getClientNameByID(toClientID);
-            string billSQL = createBillSQL(fromClientID, billNumber, DateTime.Today, clientName, 0, 0, toClientID, 0, billNumber, skladID, 0, 0, 0, userID, DateTime.Now, DateTime.Now);
+            string billSQL = createBillSQL(fromClientID, billNumber, creationDate, clientName, 0, 0, toClientID, 0, billNumber, skladID, 0, 0, 0, userID, creationDate, DateTime.Now);
             executeNonQuery(billSQL);
         }
 

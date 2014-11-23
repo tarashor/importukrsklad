@@ -65,6 +65,7 @@ namespace UkrskladImporter
                 }
             }
 
+            bill.CreationDate = billfromScanner.OutDate;
             bill.FromClient = getActiveFirm(defaultFromClientID);
             bill.Sklad = getSklad(defaultSkladID);
             

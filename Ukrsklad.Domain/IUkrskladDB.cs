@@ -9,7 +9,7 @@ namespace Ukrsklad.Domain
 {
     public interface IUkrskladDB : IDisposable
     {
-        void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars);
+        void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, DateTime creationDate);
         string GetTovarName(string kod);
         IList<Client> GetClients();
         IList<Sklad> GetSklads();

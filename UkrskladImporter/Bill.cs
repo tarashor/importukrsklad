@@ -13,6 +13,8 @@ namespace UkrskladImporter
         public Bill() {
             tovars = new List<Tovar>();
         }
+
+        public DateTime CreationDate { get; set; }
         public IList<Tovar> Tovars { get { return tovars; } }
         public Client FromClient { get; set; }
         public Client ToClient { get; set; }

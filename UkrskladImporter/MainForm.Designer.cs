@@ -40,11 +40,12 @@
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.activeFirmComboBox = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.enableClientCheckBox = new System.Windows.Forms.CheckBox();
             this.enableFirmCheckBox = new System.Windows.Forms.CheckBox();
             this.logTextBox = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.progress = new System.Windows.Forms.ProgressBar();
+            this.label6 = new System.Windows.Forms.Label();
+            this.billDate = new System.Windows.Forms.DateTimePicker();
             ((System.ComponentModel.ISupportInitialize)(this.tovars)).BeginInit();
             this.SuspendLayout();
             // 
@@ -64,7 +65,7 @@
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 99);
+            this.label1.Location = new System.Drawing.Point(10, 99);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(39, 13);
             this.label1.TabIndex = 1;
@@ -75,7 +76,7 @@
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 126);
+            this.label2.Location = new System.Drawing.Point(10, 126);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(38, 13);
             this.label2.TabIndex = 2;
@@ -167,31 +168,20 @@
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(13, 45);
+            this.label4.Location = new System.Drawing.Point(10, 45);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(82, 13);
             this.label4.TabIndex = 10;
             this.label4.Text = "Активна фірма";
-            // 
-            // enableClientCheckBox
-            // 
-            this.enableClientCheckBox.AutoSize = true;
-            this.enableClientCheckBox.Location = new System.Drawing.Point(16, 72);
-            this.enableClientCheckBox.Name = "enableClientCheckBox";
-            this.enableClientCheckBox.Size = new System.Drawing.Size(106, 17);
-            this.enableClientCheckBox.TabIndex = 12;
-            this.enableClientCheckBox.Text = "Змінити клієнта";
-            this.enableClientCheckBox.UseVisualStyleBackColor = true;
-            this.enableClientCheckBox.CheckedChanged += new System.EventHandler(this.enableClientCheckBox_CheckedChanged);
             // 
             // enableFirmCheckBox
             // 
             this.enableFirmCheckBox.AutoSize = true;
             this.enableFirmCheckBox.Location = new System.Drawing.Point(16, 19);
             this.enableFirmCheckBox.Name = "enableFirmCheckBox";
-            this.enableFirmCheckBox.Size = new System.Drawing.Size(98, 17);
+            this.enableFirmCheckBox.Size = new System.Drawing.Size(89, 17);
             this.enableFirmCheckBox.TabIndex = 13;
-            this.enableFirmCheckBox.Text = "Змінити фірму";
+            this.enableFirmCheckBox.Text = "Змінити дані";
             this.enableFirmCheckBox.UseVisualStyleBackColor = true;
             this.enableFirmCheckBox.CheckedChanged += new System.EventHandler(this.enableFirmCheckBox_CheckedChanged);
             // 
@@ -208,6 +198,7 @@
             // 
             // label5
             // 
+            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(13, 436);
             this.label5.Name = "label5";
@@ -224,16 +215,34 @@
             this.progress.Size = new System.Drawing.Size(321, 23);
             this.progress.TabIndex = 16;
             // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(10, 73);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(33, 13);
+            this.label6.TabIndex = 17;
+            this.label6.Text = "Дата";
+            // 
+            // billDate
+            // 
+            this.billDate.Location = new System.Drawing.Point(101, 69);
+            this.billDate.Name = "billDate";
+            this.billDate.Size = new System.Drawing.Size(395, 20);
+            this.billDate.TabIndex = 18;
+            this.billDate.ValueChanged += new System.EventHandler(this.billDate_ValueChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(508, 612);
+            this.Controls.Add(this.billDate);
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.progress);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.logTextBox);
             this.Controls.Add(this.enableFirmCheckBox);
-            this.Controls.Add(this.enableClientCheckBox);
             this.Controls.Add(this.activeFirmComboBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.tovars);
@@ -269,11 +278,12 @@
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.ComboBox activeFirmComboBox;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.CheckBox enableClientCheckBox;
         private System.Windows.Forms.CheckBox enableFirmCheckBox;
         private System.Windows.Forms.TextBox logTextBox;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ProgressBar progress;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.DateTimePicker billDate;
     }
 }
 

@@ -216,8 +216,8 @@ namespace UkrskladImporter
             activeFirmComboBox.SelectedItem = bill.FromClient;
             clientsComboBox.SelectedItem = bill.ToClient;
             skladsComboBox.SelectedItem = bill.Sklad;
+            billDate.Value = bill.CreationDate;
 
-            enableClientCheckBox.Checked = false;
             enableFirmCheckBox.Checked = false;
             logTextBox.Text += "Відкриття файлу завершено!";
             string logFile = string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyyMMddhhmmss"), "read" );
@@ -259,10 +259,8 @@ namespace UkrskladImporter
             columnCount.Name = "Маса";
             tovars.Columns.Add(columnCount);
 
-            enableClientCheckBox.Checked = false;
             enableFirmCheckBox.Checked = false;
-            activeFirmComboBox.Enabled = enableFirmCheckBox.Checked;
-            clientsComboBox.Enabled = enableClientCheckBox.Checked;
+            enableChangeBillData();
             
         }
 
@@ -285,7 +283,7 @@ namespace UkrskladImporter
                 {
                     if (bill.Sklad != null)
                     {
-                        db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars));
+                        db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars), bill.CreationDate);
                         string saveMessage = "Накладна збережена!";
                         if (isTrial)
                         {
@@ -343,12 +341,22 @@ namespace UkrskladImporter
 
         private void enableFirmCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            activeFirmComboBox.Enabled = enableFirmCheckBox.Checked;
+            enableChangeBillData();
         }
 
-        private void enableClientCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void enableChangeBillData()
         {
-            clientsComboBox.Enabled = enableClientCheckBox.Checked;
+            activeFirmComboBox.Enabled = enableFirmCheckBox.Checked;
+            clientsComboBox.Enabled = enableFirmCheckBox.Checked;
+            billDate.Enabled = enableFirmCheckBox.Checked;
+            skladsComboBox.Enabled = enableFirmCheckBox.Checked;
         }
+
+        private void billDate_ValueChanged(object sender, EventArgs e)
+        {
+            if (bill != null)
+                bill.CreationDate = billDate.Value;
+        }
+
     }
 }
