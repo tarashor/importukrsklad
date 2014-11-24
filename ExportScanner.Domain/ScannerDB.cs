@@ -21,6 +21,7 @@ namespace ExportScanner.Domain
             BillScanner bill = new BillScanner();
             bill.ClientID = clientID;
             bill.ClientName = GetNameForClient(clientID);
+            List<TovarScanner> tovars = loadTovars();
 
             string sql = string.Format("select * from shipping where CLIENT_ID={0}", clientID);
             OleDbCommand command = new OleDbCommand(sql, connection);
@@ -31,14 +32,16 @@ namespace ExportScanner.Domain
                 while (reader.Read())
                 {
                     int tovarId = reader.GetInt32(1);
+                    TovarScanner tovar = tovars.Find(t => t.ID == tovarId);
                     float count = reader.GetFloat(5);
-                    if (bill.Tovars.ContainsKey(tovarId))
+
+                    if (bill.Tovars.ContainsKey(tovar))
                     {
-                        bill.Tovars[tovarId] += count;
+                        bill.Tovars[tovar] += count;
                     }
                     else 
                     {
-                        bill.Tovars.Add(tovarId, count);
+                        bill.Tovars.Add(tovar, count);
                     }
 
                     DateTime boxDate = reader.GetDateTime(2);
@@ -93,6 +96,28 @@ namespace ExportScanner.Domain
             reader.Close();
 
             return name;
+        }
+
+        public List<TovarScanner> loadTovars()
+        {
+            List<TovarScanner> tovars = new List<TovarScanner>();
+            string sql = "SELECT GOODS.NAME, GROUPS.GROUP_NAME, GOODS.ID_GOODS FROM GROUPS INNER JOIN GOODS ON GROUPS.ID_GROUP = GOODS.GROUP_ID ORDER BY GOODS.NAME, GROUPS.GROUP_NAME";
+            OleDbCommand command = new OleDbCommand(sql, connection);
+            OleDbDataReader reader = command.ExecuteReader();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    TovarScanner tovar = new TovarScanner();
+                    tovar.ID = reader.GetInt32(2);
+                    tovar.Name = reader.GetString(0);
+                    tovar.GroupName = reader.GetString(1);
+                    tovars.Add(tovar);
+                }
+            }
+            reader.Close();
+
+            return tovars;
         }
 
         public void Dispose()

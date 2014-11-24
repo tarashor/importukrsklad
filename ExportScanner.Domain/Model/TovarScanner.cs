@@ -1,8 +1,11 @@
-﻿namespace ExportScanner.Domain.Model
+﻿using System;
+namespace ExportScanner.Domain.Model
 {
+    [Serializable]
     public class TovarScanner
     {
-        public double Count { get; set; }
+        public string Name { get; set; }
+        public string GroupName { get; set; }
         public int ID { get; set; }
     }
 }

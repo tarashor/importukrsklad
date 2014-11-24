@@ -52,11 +52,11 @@ namespace UkrskladImporter
                 Log += ae.Message + "\r\n";
             }
 
-            foreach(int scannerTovarId in billfromScanner.Tovars.Keys)
+            foreach(TovarScanner key in billfromScanner.Tovars.Keys)
             {
                 try
                 {
-                    Tovar tovar = createTovar(scannerTovarId, billfromScanner.Tovars[scannerTovarId]);
+                    Tovar tovar = createTovar(key, billfromScanner.Tovars[key]);
                     bill.Tovars.Add(tovar);
                 }
                 catch (ArgumentException ae)
@@ -103,10 +103,10 @@ namespace UkrskladImporter
             return null;
         }
 
-        private Tovar createTovar(int scannerId, double count) { 
+        private Tovar createTovar(TovarScanner tovarScanner, double count) { 
             Tovar tovar = new Tovar();
             tovar.Count = count;
-            tovar.KOD = mapScannerIdToKod(scannerId);
+            tovar.KOD = mapScannerIdToKod(tovarScanner.ID);
             return tovar;
         }
 
