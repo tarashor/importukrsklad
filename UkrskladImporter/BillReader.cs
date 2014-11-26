@@ -105,7 +105,7 @@ namespace UkrskladImporter
 
         private Tovar createTovar(TovarScanner tovarScanner, double count) { 
             Tovar tovar = new Tovar();
-            tovar.Count = count;
+            tovar.Count = Math.Round(count, 3);
             tovar.KOD = mapScannerIdToKod(tovarScanner.ID);
             return tovar;
         }

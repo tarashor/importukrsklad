@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Ukrsklad.Domain;
 using Ukrsklad.Domain.Model;
+using Ukrsklad.Domain.Utility;
 
 namespace UkrskladImporter
 {
@@ -37,14 +38,14 @@ namespace UkrskladImporter
                 string dbLocation = ConfigurationManager.AppSettings["DBLocation"];
                 string dbhost = ConfigurationManager.AppSettings["DBHost"];
                 bool isLocal = ConfigurationManager.AppSettings["DBIsLocal"] == "1" ? true : false;
-                Logger logger = new Logger(string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyyMMddhhmmss"), "write"));
+                
                 if (ConfigurationManager.AppSettings["DBVersion"] == "4")
                 {
-                    db = new UkrskladDB4(dbhost, dbLocation, isLocal, logger);
+                    db = new UkrskladDB4(dbhost, dbLocation, isLocal);
                 }
                 else 
                 {
-                    db = new UkrskladDB5(dbhost, dbLocation, isLocal, logger);
+                    db = new UkrskladDB5(dbhost, dbLocation, isLocal);
                 }
                 
                 clients = db.GetClients();
@@ -61,6 +62,8 @@ namespace UkrskladImporter
                 MessageBox.Show("Задайте вірно користувача під яким будуть створюватись документи.");
             }
 
+            setPDV();
+
             int defaultActiveFirm = getDefaultActiveFirm();
             int defaultSklad = getDefaultSklad();
 
@@ -71,6 +74,20 @@ namespace UkrskladImporter
             IDictionary<int, string> goodsMap = getGoodsMapScannerToUkrsklad(scannerToUkrskladGoodsFile);
 
             billReader = new BillReader(clients, activeFirms, sklads, defaultActiveFirm, defaultSklad, goodsMap, clientMap);
+        }
+
+        private void setPDV()
+        {
+            double pdv;
+            string pdvConf = ConfigurationManager.AppSettings["PDV"];
+            if (double.TryParse(pdvConf, out pdv))
+            {
+                PDVUtility.Instance.PDV = pdv;
+            }
+            else 
+            {
+                MessageBox.Show("Погано задане значення ПДВ в конфігураційному файлі. Значенна ПДВ встановлено в розмірі 0%.");
+            }
         }
 
         
@@ -205,7 +222,7 @@ namespace UkrskladImporter
             foreach (Tovar tovar in bill.Tovars) {
                 try
                 {
-                    tovar.Name = db.GetTovarName(tovar.KOD);
+                    tovar.Name = db.GetTovarName(tovar.KOD, bill.FromClient, bill.Sklad);
                 }
                 catch (ArgumentException ae) {
                     logTextBox.Text += ae.Message + "\r\n";
@@ -220,7 +237,7 @@ namespace UkrskladImporter
 
             enableFirmCheckBox.Checked = false;
             logTextBox.Text += "Відкриття файлу завершено!";
-            string logFile = string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyyMMddhhmmss"), "read" );
+            string logFile = string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss"), "read");
             System.IO.File.WriteAllText(logFile, logTextBox.Text);
             progress.Value = 100;
             progress.Value = 0;
@@ -283,7 +300,9 @@ namespace UkrskladImporter
                 {
                     if (bill.Sklad != null)
                     {
-                        db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars), bill.CreationDate);
+                        Logger logger = new Logger();
+                        logger.FileName = string.Format(@"log\{0}-{1}.txt", DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss"), "write");
+                        db.createBill(userID, bill.FromClient, bill.ToClient, (PriceType)pricesComboBox.SelectedValue, bill.Sklad, convertTovars(bill.Tovars), bill.CreationDate, logger);
                         string saveMessage = "Накладна збережена!";
                         if (isTrial)
                         {

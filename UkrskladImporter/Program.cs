@@ -18,12 +18,6 @@ namespace UkrskladImporter
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-
-            string key = getActualKey();
-            string licenseKey = getLicenseKey();
-            bool isTrial = key == licenseKey;
-
             Application.Run(new MainForm(true));
         }
 

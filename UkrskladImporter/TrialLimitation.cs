@@ -35,7 +35,7 @@ namespace UkrskladImporter
             return res;
         }
 
-        public const int MaxCounter = 15;
+        public const int MaxCounter = 25;
 
         public static void SaveCounter(int savesCount)
         {

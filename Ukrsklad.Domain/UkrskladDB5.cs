@@ -12,7 +12,7 @@ namespace Ukrsklad.Domain
 {
     public class UkrskladDB5 : UkrskladDB
     {
-        public UkrskladDB5(string host, string databaseLocation, bool isLocal, ILogger logger) : base(host, databaseLocation, isLocal, logger) { }
+        public UkrskladDB5(string host, string databaseLocation, bool isLocal) : base(host, databaseLocation, isLocal) { }
 
         private const string insertVNAKL = @"INSERT INTO VNAKL (NUM,    FIRMA_ID,   NU,     DATE_DOK,    CLIENT,             CENA,       CENA_PDV,       CENA_ZNIG,      DOV_SER,        DOV_NUM,        DOV_DATA,       DOV_FIO,        CLIENT_ID,      PDV,        PROD_UMOV,      ZNIG_TYPE,      POD_REKL_PER,       POD_REKL_CH,   FIO_BUH,    NU_ID,      SKLAD_ID,   CURR_TYPE,      CURR_CENA,      CURR_CENA_PDV,      CURR_CENA_ZNIG,     CURR_PDV,       CURR_POD_REKL_CH,   CLIENT_RAH_ID,  AFIRM_RAH_ID,       DOPOLN,         CENA_TOV_TRANS, CURR_CENA_TOV_TRANS,    IS_MOVE,    DOC_MARK_TYPE,      DOC_USER_ID,        DOC_CREATE_TIME,    DOC_MODIFY_TIME,    DOC_DESCR,      ARTICLE_ID, TTN_NU, TTN_DATE_DOK, TTN_DOR_LIST, TTN_AVTO, TTN_AVTO_PIDPR, TTN_VODITEL, TTN_ADR_FROM, TTN_ADR_TO, IM_NUM, ZNIG_PROC, TTN_AVTO_PRIC, TTN_VID_PEREV, TTN_KOLVO_MIS, TTN_MAS_BRUT, PDV_TYPE)
                                                         VALUES (NULL,   {0},        '{1}',  '{2}',       '{3}',              {4},        {5},            0,              '',             '',             NULL,           '',             {6},            {7},        '',             0,              NULL,               0,             NULL,       {8},        {9},        0,              {10},           {11},               0,                  {12},           0,                  0,              0,                  '',             0, 0,                                   1,          0,                  {13},               '{14}',             '{15}',             '',             0, '', '1899-12-30 00:00:00', '', '', '', '', '', '', -1, 0, '', '', '', '', 0);";
@@ -55,7 +55,7 @@ namespace Ukrsklad.Domain
 
         protected override string updateBillPriceSQL(int billID, decimal price)
         {
-            return string.Format(updateBillPrice, price, PDVUtility.getPriceWithPDV(price), PDVUtility.getPDV(price), price, PDVUtility.getPriceWithPDV(price), PDVUtility.getPDV(price), billID);
+            return string.Format(updateBillPrice, price, PDVUtility.Instance.getPriceWithPDV(price), PDVUtility.Instance.getPDV(price), price, PDVUtility.Instance.getPriceWithPDV(price), PDVUtility.Instance.getPDV(price), billID);
         }
 
         protected override string getUpdateClientSumSQL(int clientID, decimal sum)

@@ -9,11 +9,11 @@ namespace UkrskladImporter
 {
     public class Logger:ILogger
     {
-        public string strLogFilePath = string.Empty;
         private StreamWriter sw = null;
+        private string filename = null;
         
-        public Logger(string filename) {
-            sw = new StreamWriter(filename);
+        public Logger() {
+            
         }
         public void Log(string log)
         {
@@ -21,9 +21,30 @@ namespace UkrskladImporter
                 sw.WriteLine(log);
         }
 
-        public void Close()
+        public void StartLogging()
+        {
+            if (filename != null)
+            {
+                sw = new StreamWriter(filename);
+            }
+        }
+
+        public void StopLogging()
         {
             sw.Close();
+        }
+
+
+        public string FileName
+        {
+            get
+            {
+                return filename;
+            }
+            set
+            {
+                filename = value;
+            }
         }
     }
 }

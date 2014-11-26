@@ -8,14 +8,31 @@ namespace Ukrsklad.Domain.Utility
 {
     public class PDVUtility
     {
-        private const double PDV = 20;
+        private PDVUtility()
+        {
+            PDV = 0;
+        }
+        private static PDVUtility instance = null;
+        public static PDVUtility Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new PDVUtility();
+                }
+                return instance;
+            }
+        }
 
-        public static decimal getPriceWithPDV(decimal price)
+        public double PDV { get; set; }
+
+        public decimal getPriceWithPDV(decimal price)
         {
             return price + getPDV(price);
         }
 
-        public static decimal getPDV(decimal price)
+        public decimal getPDV(decimal price)
         {
             return price * (decimal)PDV / 100;
         }

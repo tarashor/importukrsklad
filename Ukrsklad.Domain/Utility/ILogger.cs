@@ -8,6 +8,8 @@ namespace Ukrsklad.Domain.Utility
     public interface ILogger
     {
         void Log(string log);
-        void Close();
+        string FileName { get; set; }
+        void StartLogging();
+        void StopLogging();
     }
 }

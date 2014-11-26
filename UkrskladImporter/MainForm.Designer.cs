@@ -120,7 +120,7 @@
             this.pricesComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pricesComboBox.FormattingEnabled = true;
-            this.pricesComboBox.Location = new System.Drawing.Point(101, 154);
+            this.pricesComboBox.Location = new System.Drawing.Point(101, 151);
             this.pricesComboBox.Name = "pricesComboBox";
             this.pricesComboBox.Size = new System.Drawing.Size(395, 21);
             this.pricesComboBox.TabIndex = 6;
@@ -189,10 +189,10 @@
             // 
             this.logTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.logTextBox.Enabled = false;
             this.logTextBox.Location = new System.Drawing.Point(13, 452);
             this.logTextBox.Multiline = true;
             this.logTextBox.Name = "logTextBox";
+            this.logTextBox.ReadOnly = true;
             this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.logTextBox.Size = new System.Drawing.Size(483, 119);
             this.logTextBox.TabIndex = 14;

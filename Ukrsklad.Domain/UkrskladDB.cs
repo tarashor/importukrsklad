@@ -16,8 +16,7 @@ namespace Ukrsklad.Domain
         protected FbConnection connection;
         protected ILogger logger;
 
-        protected UkrskladDB(string host, string databaseLocation, bool isLocal, ILogger logger) {
-            this.logger = logger;
+        protected UkrskladDB(string host, string databaseLocation, bool isLocal) {
             string sCurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
             CultureInfo ci = new CultureInfo(sCurrentCulture);
             ci.NumberFormat.NumberDecimalSeparator = ".";
@@ -96,8 +95,10 @@ namespace Ukrsklad.Domain
 
 
 
-        public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, DateTime creationDate)
+        public void createBill(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, DateTime creationDate, ILogger logger)
         {
+            this.logger = logger;
+            this.logger.StartLogging();
             createBillHeader(getBiggestBillNumber() + 1, sklad.ID, fromClient.ID, toClient.ID, userID, creationDate);
             int billID = getLastBillID();
             decimal total = 0;
@@ -108,6 +109,8 @@ namespace Ukrsklad.Domain
 
             setTotalInBill(billID, total);
             setAdditionalValues(userID, fromClient, toClient, priceType, sklad, tovars, total);
+            this.logger.StopLogging();
+            this.logger = null;
         }
 
         protected virtual void setAdditionalValues(int userID, Client fromClient, Client toClient, PriceType priceType, Sklad sklad, List<InputTovar> tovars, decimal total) { 
@@ -121,9 +124,9 @@ namespace Ukrsklad.Domain
 
         private decimal addTovarToBill(int billID, string tovarID, double count, PriceType priceType, int skladID, int fromClientID, int toClientID, DateTime tovarMoveDate)
         {
-            UkrskladTovar InputTovar = getTovarByKOD(tovarID);
+            UkrskladTovar InputTovar = getTovarByKOD(tovarID, skladID, fromClientID);
             decimal price = getPrice(InputTovar, priceType);
-            decimal pricePDV = PDVUtility.getPriceWithPDV(price);
+            decimal pricePDV = PDVUtility.Instance.getPriceWithPDV(price);
             decimal sum = (decimal)count * price;
 
             string billContentSQL = createBillContentSQL(billID, InputTovar.Name, InputTovar.ID, InputTovar.MeasurementUnits, count, price, pricePDV, price, pricePDV, skladID, sum, sum);
@@ -165,8 +168,8 @@ namespace Ukrsklad.Domain
         private void createTovarMove(int billID, int tovarID, int fromFirmaID, int fromSkladID, double count, decimal price, int toFirmaID, DateTime moveDate)
         {
             decimal sum = (decimal)count * price;
-            decimal pricePDV = PDVUtility.getPDV(price);
-            decimal sumPDV = PDVUtility.getPDV(sum);
+            decimal pricePDV = PDVUtility.Instance.getPDV(price);
+            decimal sumPDV = PDVUtility.Instance.getPDV(sum);
             int toSkladId = 0; //because it is out 
             string insertTovarMove = createTovarMoveSQL(billID, moveDate, tovarID, fromFirmaID, fromSkladID, count, price, sum, toFirmaID, toSkladId, count, price, sum, price, sum, price, sum, pricePDV, sumPDV, pricePDV, sumPDV);
             executeNonQuery(insertTovarMove);
@@ -235,57 +238,67 @@ namespace Ukrsklad.Domain
         }
         
 
-        private UkrskladTovar getTovarByKOD(string tovarKOD)
+        private UkrskladTovar getTovarByKOD(string tovarKOD, int skladID, int clientID)
         {
-            UkrskladTovar InputTovar = null;
             string sql = getSelectTovarByKODSQL(tovarKOD);
-            executeSelectOneRow(sql, (reader) =>
+            List<UkrskladTovar> tovars = new List<UkrskladTovar>();
+            executeSelect(sql, (reader) =>
               {
-                  InputTovar = new UkrskladTovar();
+                  UkrskladTovar tovar = new UkrskladTovar();
                   for (int i = 0; i < reader.FieldCount; i++)
                   {
                       string column = reader.GetName(i);
                       if (column == "NUM")
                       {
-                          InputTovar.ID = reader.GetInt32(i);
+                          tovar.ID = reader.GetInt32(i);
                       }
                       if (column == "NAME")
                       {
-                          InputTovar.Name = reader.GetString(i);
+                          tovar.Name = reader.GetString(i);
                       }
                       if (column == "ED_IZM")
                       {
-                          InputTovar.MeasurementUnits = reader.GetString(i);
+                          tovar.MeasurementUnits = reader.GetString(i);
                       }
                       if (column == "CENA")
                       {
-                          InputTovar.Cina = reader.GetDecimal(i);
+                          tovar.Cina = reader.GetDecimal(i);
                       }
                       if (column == "CENA_O")
                       {
-                          InputTovar.CinaOptova = reader.GetDecimal(i);
+                          tovar.CinaOptova = reader.GetDecimal(i);
                       }
                       if (column == "CENA_R")
                       {
-                          InputTovar.CinaRozdrib = reader.GetDecimal(i);
+                          tovar.CinaRozdrib = reader.GetDecimal(i);
                       }
 
                       if (column == "CENA_1")
                       {
-                          InputTovar.Cina1 = reader.GetDecimal(i);
+                          tovar.Cina1 = reader.GetDecimal(i);
                       }
                       if (column == "CENA_2")
                       {
-                          InputTovar.Cina2 = reader.GetDecimal(i);
+                          tovar.Cina2 = reader.GetDecimal(i);
                       }
                       if (column == "CENA_3")
                       {
-                          InputTovar.Cina3 = reader.GetDecimal(i);
+                          tovar.Cina3 = reader.GetDecimal(i);
                       }
                   }
+                  tovars.Add(tovar);
               });
 
-            return InputTovar;
+            foreach (UkrskladTovar tovar in tovars) {
+                double left = 0;
+                int? leftTovarId = getLeftCountOfTovar(tovar.ID, skladID, clientID, out left);
+                if (leftTovarId.HasValue)
+                {
+                    return tovar;
+                }
+            }
+
+            return null;
         }
 
 
@@ -313,7 +326,7 @@ namespace Ukrsklad.Domain
         protected abstract string getSelectClientNameByID(int clientID);
         
         protected abstract string getSelectTovarByKODSQL(string tovarKOD);
-        
+
         protected abstract string getSelectVisibleClientsSQL();
 
         protected abstract string getSelectVisibleSkladsSQL();
@@ -337,18 +350,16 @@ namespace Ukrsklad.Domain
         public void Dispose()
         {
             connection.Dispose();
-            logger.Close();
         }
 
         public void Close() 
         {
             connection.Close();
-            logger.Close();
         }
 
-        public string GetTovarName(string kod)
+        public string GetTovarName(string kod, Client client, Sklad sklad)
         {
-            UkrskladTovar tovar = getTovarByKOD(kod);
+            UkrskladTovar tovar = getTovarByKOD(kod, sklad.ID, client.ID);
             if (tovar != null){
                 return tovar.Name;
             }
@@ -357,7 +368,10 @@ namespace Ukrsklad.Domain
 
         protected void executeSelectOneRow(string selectSQL, Action<DbDataReader> action)
         {
-            logger.Log(selectSQL);
+            if (logger != null)
+            {
+                logger.Log(selectSQL);
+            }
             FbCommand command = new FbCommand(selectSQL, connection);
             FbDataReader reader = command.ExecuteReader();
             try
@@ -372,7 +386,10 @@ namespace Ukrsklad.Domain
             }
             catch (Exception e)
             {
-                logger.Log(e.Message);
+                if (logger != null)
+                {
+                    logger.Log(e.Message);
+                }
             }
             finally
             {
@@ -382,7 +399,10 @@ namespace Ukrsklad.Domain
 
         protected void executeSelect(string selectSQL, Action<DbDataReader> action)
         {
-            logger.Log(selectSQL);
+            if (logger != null)
+            {
+                logger.Log(selectSQL);
+            }
             FbCommand command = new FbCommand(selectSQL, connection);
             FbDataReader reader = command.ExecuteReader();
             try
@@ -397,7 +417,10 @@ namespace Ukrsklad.Domain
             }
             catch (Exception e)
             {
-                logger.Log(e.Message);
+                if (logger != null)
+                {
+                    logger.Log(e.Message);
+                }
             }
             finally
             {
@@ -409,13 +432,19 @@ namespace Ukrsklad.Domain
         {
             try
             {
-                logger.Log(SQL);
+                if (logger != null)
+                {
+                    logger.Log(SQL);
+                }
                 FbCommand command = new FbCommand(SQL, connection);
                 command.ExecuteNonQuery();
             }
             catch (Exception ex)
             {
-                logger.Log(ex.Message);
+                if (logger != null)
+                {
+                    logger.Log(ex.Message);
+                }
             }
         }
     }
