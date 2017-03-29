@@ -52,11 +52,11 @@ namespace UkrskladImporter
                 Log += ae.Message + "\r\n";
             }
 
-            foreach(TovarScanner key in billfromScanner.Tovars.Keys)
+            foreach (var kvp in billfromScanner.Tovars)
             {
                 try
                 {
-                    Tovar tovar = createTovar(key, billfromScanner.Tovars[key]);
+                    Tovar tovar = createTovar(kvp.Key, kvp.Value);
                     bill.Tovars.Add(tovar);
                 }
                 catch (ArgumentException ae)
@@ -72,8 +72,7 @@ namespace UkrskladImporter
             return bill;
         }
 
-        
-
+       
         private Client getClient(int clientID)
         {
             foreach (Client client in clients) { 
